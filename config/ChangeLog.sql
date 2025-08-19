@@ -176,6 +176,6 @@ Filtered As (
     select *
     from StatusBranchChangeLog
     where
-        Event_TS >= (TIMESTAMP_FORMAT(VARCHAR_FORMAT(CURRENT TIMESTAMP, 'YYYY-MM-DD-HH24') || ':00:00','YYYY-MM-DD-HH24:MI:SS') - 24 HOUR)
+        Event_TS >= (TIMESTAMP_FORMAT(VARCHAR_FORMAT(CURRENT TIMESTAMP, 'YYYY-MM-DD-HH24') || ':00:00','YYYY-MM-DD-HH24:MI:SS') - 1 HOUR)
         and Event_TS <  TIMESTAMP_FORMAT(VARCHAR_FORMAT(CURRENT TIMESTAMP, 'YYYY-MM-DD-HH24') || ':00:00','YYYY-MM-DD-HH24:MI:SS')
     order by Event_TS desc
