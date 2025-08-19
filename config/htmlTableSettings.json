@@ -1,0 +1,49 @@
+{
+  "wanted_columns": [
+    "USER_ID",
+    "EVENT_TS",
+    "STOCK_NUMBER",
+    "MAKE",
+    "MODEL",
+    "DESCRIPTION",
+    "TYPE",
+    "GROUP_CODE",
+    "DEPARTMENT",
+    "SALESPERSON",
+    "PURCHASER",
+    "CUSTOMER",
+    "NAME",
+    "RETAIL",
+    "CHANGE_TYPE",
+    "STATUS_CHANGE",
+    "STATUS",
+    "BRANCH_CHANGE",
+    "PREVIOUS_BRANCH",
+    "CURRENT_BRANCH",
+    "WO_LIST"
+  ],
+  "status_order": [
+    "Sold",
+    "Pre-Sold",
+    "Quoted",
+    "Inventory",
+    "Rental",
+    "On Order",
+    "Deleted",
+    "Transfered",
+    "Transferred",
+    "Invoiced"
+  ],
+  "status_colors": {
+    "Inventory":  "#D6EAF8",
+    "Rental":     "#AED6F1",
+    "Sold":       "#F5B7B1",
+    "On Order":   "#F9E79F",
+    "Quoted":     "#E8DAEF",
+    "Pre-Sold":   "#D2B4DE",
+    "Deleted":    "#D5DBDB",
+    "Transfered": "#A3E4D7",
+    "Transferred":"#A3E4D7",
+    "Invoiced":   "#FDEBD0"
+  }
+}

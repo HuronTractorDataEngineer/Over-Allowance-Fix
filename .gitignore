@@ -1,0 +1,97 @@
+# ===============================
+# VS Code / Editors
+# ===============================
+.vscode/
+.history/
+*.code-workspace
+.idea/
+.vs/
+
+# ===============================
+# OS files
+# ===============================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===============================
+# Logs & temp
+# ===============================
+*.log
+logs/**
+!logs/.gitkeep
+
+*.tmp
+temp/
+tmp/
+*~
+*.swp
+*.swo
+
+# ===============================
+# Node (if applicable)
+# ===============================
+node_modules/
+dist/
+build/
+.pnpm-store/
+
+# ===============================
+# Python
+# ===============================
+__pycache__/
+*.py[cod]
+*.so
+.venv/
+venv/
+env/
+pip-wheel-metadata/
+.eggs/
+*.egg
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pyre/
+.pytype/
+.tox/
+.nox/
+.ipynb_checkpoints/
+.cache/
+.python-version
+
+# ===============================
+# .NET (if applicable)
+# ===============================
+bin/
+obj/
+
+# Secrets
+.env
+.env.*
+
+# ===============================
+# Databases / local state
+# ===============================
+*.sqlite*
+*.db
+
+# ===============================
+# Coverage / test artifacts
+# ===============================
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# ===============================
+# Secrets & credentials
+# ===============================
+.env
+.env.*
+.envrc
+*.pem
+*.key
+*.p12
+*.pfx
+
