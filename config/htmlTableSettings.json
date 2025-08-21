@@ -25,14 +25,14 @@
   "status_order": [
     "Sold",
     "Pre-Sold",
-    "Quoted",
     "Inventory",
     "Rental",
     "On Order",
+    "Invoiced",
     "Deleted",
     "Transfered",
     "Transferred",
-    "Invoiced"
+    "Quoted"
   ],
   "status_colors": {
     "Inventory":  "#D6EAF8",
