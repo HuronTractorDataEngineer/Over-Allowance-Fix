@@ -7,13 +7,9 @@ from zoneinfo import ZoneInfo
 # Project Directory Maintenance
 # ------------------------------------------------------------
 
-def classify_run(now: datetime | None = None, tz: str = "America/Toronto") -> str:
+def calc_log_variables(now: datetime | None = None, tz: str = "America/Toronto") -> str:
     """
-    Returns one of:
-      - 'clWeekendCatchup'  (Monday @ 09:00)
-      - 'clMorningCatchup'  (Tue–Fri @ 09:00)
-      - 'clDayend'          (any day @ 16:30)
-      - 'clInterval'        (otherwise)
+    Calculates Minutes and Interval to be used in SQL statement
     """
     # Resolve "now" in the desired timezone
     if now is None:
@@ -28,12 +24,13 @@ def classify_run(now: datetime | None = None, tz: str = "America/Toronto") -> st
     wd = now.weekday()  # Monday=0 ... Sunday=6
 
     if hh == 9 and wd == 0:
-        return "clWeekendCatchup"
+        return '30','65'
     if hh == 9 and wd != 0:
-        return "clMorningCatchup"
+        return '30','17'
     if hh == 16 and mm == 30:
-        return "clDayend"
-    return "clInterval"
+        return "00",'1'
+    
+    return '00','4'
 
 def remove_old_files(directory, keep_count):
     """

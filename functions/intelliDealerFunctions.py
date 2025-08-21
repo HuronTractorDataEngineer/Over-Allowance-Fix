@@ -30,7 +30,7 @@ def read_id_config():
 # Data Retreival functions — Populate Dataframes
 # ------------------------------------------------------------
 
-def retrieve_id_data(sqlDirectory: str, sqlFileName: str, id_conf: Dict[str, str]) -> pd.DataFrame:
+def retrieve_id_data(sqlDirectory: str, sqlFileName: str, id_conf: Dict[str, str], logMinutes, logInterval) -> pd.DataFrame:
     """
     Retrieve data using an SQL script and IntelliDealer connection info from id_conf.
     id_conf must include: server, database, user, password.
@@ -55,8 +55,7 @@ def retrieve_id_data(sqlDirectory: str, sqlFileName: str, id_conf: Dict[str, str
             sql_query_template = file.read()
 
         todaysDate = datetime.date.today().strftime('%Y-%m-%d')
-        getReceivingdata = sql_query_template.format(todaysDate=todaysDate)
-
+        getReceivingdata = sql_query_template.format(logMinutes=logMinutes,logInterval=logInterval)
         logging.info(' - Executing SQL Script and Loading into DataFrame')
         df = pd.read_sql(sql=getReceivingdata, con=connection)
         df = df.convert_dtypes()

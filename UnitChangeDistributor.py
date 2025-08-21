@@ -5,14 +5,14 @@ from functions.warehouseFunctions import retrieve_server_data, read_dw_config
 from functions.graphFunctions import send_email_graph, read_graph_config
 from functions.evaluationFunctions import compile_change_list_for_user
 from functions.renderingFunctions import load_htmlTable_settings, sort_for_email, render_html_table
-from functions.maintenanceFunctions import remove_old_files, classify_run
+from functions.maintenanceFunctions import remove_old_files, calc_log_variables
 
 # ------------------------------------------------------------
 # Job and Logging Configuration
 # ------------------------------------------------------------
 
-# Assess file to use based on Runtime
-sqlFile = classify_run()
+# Assess runtime Interval
+logMinutes,logInterval = calc_log_variables()
 
 jobName = 'UnitChangeProcess'
 
@@ -29,9 +29,6 @@ logging.info(f'{jobName} Job and Logging Config loaded')
 # Load Connection Settings
 # ------------------------------------------------------------
 logging.info('Loading Connection Settings...')
-
-# Load and read connectionSettings.ini
-#config = configparser.ConfigParser()
 
 # Data Warehouse connection
 dw_conf = read_dw_config()
@@ -66,7 +63,7 @@ logging.info(' - Table Preferences loaded')
 logging.info('Retrieving dataframes...')
 
 # Load IntelliDealer Change log into dataframe
-dfChangeLog   = retrieve_id_data('config', sqlFile, id_conf)
+dfChangeLog   = retrieve_id_data('config', 'ChangeLog', id_conf,logMinutes,logInterval)
 logging.info(' - Changlog dataset loaded')
 # Load Alert Matrix into dataframe
 dfAlertMatrix = retrieve_server_data('AlertMatrix', dw_conf)
