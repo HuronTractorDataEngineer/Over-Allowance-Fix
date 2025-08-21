@@ -1,11 +1,11 @@
 import logging
 import datetime
-from functions.intelliDealerFunctions import retrieve_id_data, read_id_config
+from functions.intelliDealerFunctions import retrieve_id_data, read_id_config, calc_log_variables
 from functions.warehouseFunctions import retrieve_server_data, read_dw_config
 from functions.graphFunctions import send_email_graph, read_graph_config
 from functions.evaluationFunctions import compile_change_list_for_user
 from functions.renderingFunctions import load_htmlTable_settings, sort_for_email, render_html_table
-from functions.processingFunctions import remove_old_files, calc_log_variables
+from functions.maintenanceFunctions import remove_old_files
 
 # ------------------------------------------------------------
 # Job and Logging Configuration

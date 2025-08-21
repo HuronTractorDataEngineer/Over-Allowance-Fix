@@ -5,6 +5,9 @@ import datetime
 import pandas as pd
 import os
 from typing import Dict
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
 
 def read_id_config():
     """
@@ -25,6 +28,31 @@ def read_id_config():
 
     logging.info("IntelliDealer Connection settings retrieved")
     return env_conf
+
+def calc_log_variables(now: datetime | None = None, tz: str = "America/Toronto") -> str:
+    """
+    Calculates Minutes and Interval to be used in SQL statement
+    """
+    # Resolve "now" in the desired timezone
+    if now is None:
+        now = datetime.now(ZoneInfo(tz))
+    else:
+        z = ZoneInfo(tz)
+        now = now if now.tzinfo else now.replace(tzinfo=z)
+        now = now.astimezone(z)
+
+    hh = now.hour
+    mm = now.minute
+    wd = now.weekday()  # Monday=0 ... Sunday=6
+
+    if hh == 9 and wd == 0:
+        return '30','65'
+    if hh == 9 and wd != 0:
+        return '30','17'
+    if hh == 16 and mm == 30:
+        return "00",'1'
+    
+    return '00','4'
 
 # ------------------------------------------------------------
 # Data Retreival functions — Populate Dataframes
