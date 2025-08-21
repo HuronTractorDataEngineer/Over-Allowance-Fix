@@ -53,7 +53,12 @@ def load_htmlTable_settings(settings_path: str | Path | None = None):
     status_order   = [_norm_status(s) for s in cfg.get("status_order", [])]
     status_colors  = {_norm_status(k): v for k, v in cfg.get("status_colors", {}).items()}
 
-    return wanted_columns, status_colors, status_order
+    report_cfg    = cfg.get("report") or {}
+    report_url    = report_cfg.get("url", "")
+    report_label  = report_cfg.get("label", "")
+
+    return wanted_columns, status_colors, status_order, report_url, report_label
+
 
 # ------------------------------------------------------------
 # Email rendering — with STATUS-based sorting & row coloring

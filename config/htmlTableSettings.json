@@ -45,5 +45,9 @@
     "Transfered": "#A3E4D7",
     "Transferred":"#A3E4D7",
     "Invoiced":   "#FDEBD0"
+  },
+  "report": {
+    "url": "https://app.fabric.microsoft.com/Redirect?action=OpenReport&appId=2151d95d-5675-49bd-abe2-337851a7858e&reportObjectId=5e1e7588-4f12-499c-8b6d-11d3d0185376&ctid=cf996bb6-0b57-47f3-86f0-c645dae07e15&reportPage=e536d8660e63431d1a94&pbi_source=appShareLink&portalSessionId=23df4582-6027-4a62-b101-211bc564ef01",
+    "label": "Click here for past changes"
   }
 }
