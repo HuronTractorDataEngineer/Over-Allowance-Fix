@@ -5,11 +5,15 @@ from functions.warehouseFunctions import retrieve_server_data, read_dw_config
 from functions.graphFunctions import send_email_graph, read_graph_config
 from functions.evaluationFunctions import compile_change_list_for_user
 from functions.renderingFunctions import load_htmlTable_settings, sort_for_email, render_html_table
-from functions.maintenanceFunctions import remove_old_files
+from functions.maintenanceFunctions import remove_old_files, classify_run
 
 # ------------------------------------------------------------
 # Job and Logging Configuration
 # ------------------------------------------------------------
+
+# Assess file to use based on Runtime
+sqlFile = classify_run()
+
 jobName = 'UnitChangeProcess'
 
 log_filename = datetime.datetime.now().strftime(f'logs/{jobName}_%Y-%m-%d_%H-%M-%S.log')
@@ -62,7 +66,7 @@ logging.info(' - Table Preferences loaded')
 logging.info('Retrieving dataframes...')
 
 # Load IntelliDealer Change log into dataframe
-dfChangeLog   = retrieve_id_data('config', 'ChangeLog', id_conf)
+dfChangeLog   = retrieve_id_data('config', sqlFile, id_conf)
 logging.info(' - Changlog dataset loaded')
 # Load Alert Matrix into dataframe
 dfAlertMatrix = retrieve_server_data('AlertMatrix', dw_conf)
