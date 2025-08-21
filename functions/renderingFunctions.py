@@ -32,7 +32,7 @@ def load_htmlTable_settings(settings_path: str | Path | None = None):
     Load HTML table rendering settings from JSON.
 
     If `settings_path` is None, defaults to
-    <repo_root>/config/htmlTableSettings.json (relative to this file).
+    <repo_root>/config/htmlSettings.json (relative to this file).
 
     Returns:
         wanted_columns: List of column names to include (in order).
@@ -44,7 +44,7 @@ def load_htmlTable_settings(settings_path: str | Path | None = None):
         case/spacing/underscore-insensitive lookups.
     """
     if settings_path is None:
-        settings_path = Path(__file__).resolve().parents[1] / "config" / "htmlTableSettings.json"
+        settings_path = Path(__file__).resolve().parents[1] / "config" / "htmlSettings.json"
 
     with open(settings_path, "r", encoding="utf-8") as f:
         cfg = json.load(f)
@@ -99,7 +99,7 @@ def sort_for_email(_STATUS_RANK, df: pd.DataFrame) -> pd.DataFrame:
     work = work.sort_values(by=['_rank','_ts','STOCK_NUMBER'], ascending=[False, False, True], kind='mergesort')
     return work.drop(columns=['_rank','_ts'])
 
-def render_html_table(_STATUS_RANK, STATUS_COLORS, df: pd.DataFrame, title: str, subtitle: str = '') -> str:
+def render_html_table(_STATUS_RANK, STATUS_COLORS, url, label, df: pd.DataFrame, title: str, subtitle: str = '') -> str:
     """
     Render a status-colored HTML table suitable for email.
 
@@ -162,4 +162,14 @@ def render_html_table(_STATUS_RANK, STATUS_COLORS, df: pd.DataFrame, title: str,
       </body>
     </html>
     """
+    cta_html = (
+        f"<div style='margin:12px 0 16px'>"
+        f"<a href='{url}' target='_blank' rel='noopener' "
+        f"style='display:inline-block;padding:10px 14px;border-radius:8px;"
+        f"background:#0f6cbd;color:#fff;text-decoration:none;font-weight:600'>"
+        f"{label}</a></div>"
+        )
+    
+    html = html.replace("</h2>", f"</h2>{cta_html}")
+
     return html

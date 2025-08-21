@@ -118,15 +118,7 @@ def main():
         title   = f"Unit Changes for {branch} — {role}"
         subtitle= f"Total records: {len(df_send)} (sorted by STATUS)"
         # Rendering HTML email
-        body_html = render_html_table(_STATUS_RANK, STATUS_COLORS, df_send, title=title, subtitle=subtitle)
-        cta_html = (
-            f"<div style='margin:12px 0 16px'>"
-            f"<a href='{REPORT_URL}' target='_blank' rel='noopener' "
-            f"style='display:inline-block;padding:10px 14px;border-radius:8px;"
-            f"background:#0f6cbd;color:#fff;text-decoration:none;font-weight:600'>"
-            f"{REPORT_LABEL}</a></div>"
-        )
-        body_html = body_html.replace("</h2>", f"</h2>{cta_html}")
+        body_html = render_html_table(_STATUS_RANK, STATUS_COLORS, REPORT_URL, REPORT_LABEL, df_send, title=title, subtitle=subtitle)
 
         # Sending email to user
         send_email_graph(email, subject, body_html, graph_conf)
