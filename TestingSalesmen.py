@@ -71,13 +71,14 @@ logging.info(' - Changlog dataset loaded')
 # Main Orchestrator
 # ------------------------------------------------------------
 def main():
-    # --- new second pass: email Salesperson/Purchaser directly
+    # Add to dataframe creation section after dfChangelog is created
     dfSalesmen = generate_dfSalesmen(dfChangeLog)
     #print(dfSalesmen)
 
-        # --- new second pass: email Salesperson/Purchaser directly
+    # Add below user loop to loop through sales people
+    # Remove prints and un comment the render and send lines
     logging.info('Starting Salesperson/Purchaser email pass')
-    contact_sent = 0
+    salesmen_sent = 0
 
     for _, salesman in dfSalesmen.iterrows():
         email = salesman['Email']
@@ -90,7 +91,7 @@ def main():
         df_send  = sort_for_email(_STATUS_RANK, df_person.copy())
         subject  = f"Unit Changes for {name} ({len(df_send)} records)"
         title    = f"Unit Changes for {name}"
-        subtitle = f"Appearing as Salesperson or Purchaser • Total records: {len(df_send)} (sorted by STATUS)"
+        subtitle = f"Total Records where you are Salesperson or Purchaser: {len(df_send)} (sorted by STATUS)"
 
         #body_html = render_html_table(_STATUS_RANK, STATUS_COLORS, REPORT_URL, REPORT_LABEL, df_send, title=title, subtitle=subtitle)
         #send_email_graph(person_email, subject, body_html, graph_conf)
@@ -99,10 +100,10 @@ def main():
         print(title)
         print(subtitle)
         print(df_person)
-        contact_sent += 1
+        salesman_sent += 1
 
-    sent += contact_sent
-    logging.info(f'Contact emails sent (sales/purchasers): {contact_sent}')
+    sent += salesman_sent
+    logging.info(f'Contact emails sent (sales/purchasers): {salesman_sent}')
 
 if __name__ == '__main__':
     main()
