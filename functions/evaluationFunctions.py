@@ -156,3 +156,45 @@ def compile_change_list_for_user(WANTED_COLUMNS, df_log: pd.DataFrame, df_matrix
         cols = WANTED_COLUMNS
 
     return filtered.loc[:, cols].copy()
+
+# ------------------------------------------------------------
+# Helper functions — Salesperson and Purchaser Evaluation
+# ------------------------------------------------------------
+
+def _find_col(df: pd.DataFrame, target_upper: str) -> str | None:
+    """Return the first column name matching target_upper (case-insensitive), or None."""
+    for c in df.columns:
+        if str(c).upper() == target_upper:
+            return c
+    return None
+
+def compile_change_list_for_contact(WANTED_COLUMNS, df_log: pd.DataFrame, person_email: str) -> pd.DataFrame:
+    """Rows where email matches either Salesperson_Email or Purchaser_Email."""
+    if not person_email:
+        return df_log.iloc[0:0]  # empty with same cols
+
+    sp_col = _find_col(df_log, 'SALESPERSON_EMAIL')
+    pu_col = _find_col(df_log, 'PURCHASER_EMAIL')
+    if not sp_col and not pu_col:
+        logging.error('Expected SALESPERSON_EMAIL / PURCHASER_EMAIL not found in dfChangeLog.')
+        return df_log.iloc[0:0]
+
+    e = person_email.strip().casefold()
+    sp = df_log[sp_col].fillna('').astype(str).str.strip().str.casefold() if sp_col else pd.Series(False, index=df_log.index)
+    pu = df_log[pu_col].fillna('').astype(str).str.strip().str.casefold() if pu_col else pd.Series(False, index=df_log.index)
+    filtered = df_log.loc[(sp == e) | (pu == e)]
+
+    # Project to your usual email table columns
+    cols = [c for c in WANTED_COLUMNS if c in filtered.columns]
+    return filtered.loc[:, cols].copy()
+
+def generate_email_list(df_log: pd.DataFrame) -> set[str]:
+    """Unique non-empty emails from Salesperson_Email and Purchaser_Email."""
+    emails: set[str] = set()
+    for target in ('SALESPERSON_EMAIL', 'PURCHASER_EMAIL'):
+        col = _find_col(df_log, target)
+        if not col:
+            continue
+        series = df_log[col].dropna().astype(str).str.strip()
+        emails |= {s.lower() for s in series if s and '@' in s}
+    return emails

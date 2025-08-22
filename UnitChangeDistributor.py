@@ -114,6 +114,7 @@ def main():
         subject = f"Unit Changes for {branch} — {role} ({len(df_send)} records)"
         title   = f"Unit Changes for {branch} — {role}"
         subtitle= f"Total records: {len(df_send)} (sorted by STATUS)"
+
         # Rendering HTML email
         body_html = render_html_table(_STATUS_RANK, STATUS_COLORS, REPORT_URL, REPORT_LABEL, df_send, title=title, subtitle=subtitle)
 

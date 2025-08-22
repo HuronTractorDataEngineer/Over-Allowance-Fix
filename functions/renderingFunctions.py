@@ -113,25 +113,35 @@ def render_html_table(_STATUS_RANK, STATUS_COLORS, url, label, df: pd.DataFrame,
     Returns:
         str: Complete HTML document as a string.
     """
-
+    # Format Retail
+    df['RETAIL'] = (
+        pd.to_numeric(df['RETAIL'], errors='coerce')
+        .map(lambda x: f"${x:,.2f}" if pd.notna(x) else '')
+    )
     # Ensure sorted
     df = sort_for_email(_STATUS_RANK, df)
 
     # Build HTML table with inline row background colors for maximum email-client compatibility
     headers = list(df.columns)
 
-    def td(val: object) -> str:
-        return f"<td>{_html.escape('' if pd.isna(val) else str(val))}</td>"
+    def td(val: object, col: str) -> str:
+        # inline + legacy align attribute for maximum email-client support
+        align = " align='right' style='text-align:right'" if col == 'RETAIL' else ""
+        return f"<td{align}>{_html.escape('' if pd.isna(val) else str(val))}</td>"
+
+    def th(col: str) -> str:
+        align = " align='right' style='text-align:right'" if col == 'RETAIL' else ""
+        return f"<th{align}>{_html.escape(col)}</th>"
 
     rows_html = []
     for _, row in df.iterrows():
         status_key = _normalize_status(row.get('STATUS'))
         bg = STATUS_COLORS.get(status_key, '')
         tr_style = f" style=\"background-color: {bg};\"" if bg else ''
-        cells = ''.join(td(row.get(col)) for col in headers)
+        cells = ''.join(td(row.get(col), col) for col in headers)
         rows_html.append(f"<tr{tr_style}>{cells}</tr>")
 
-    thead = '<thead><tr>' + ''.join(f"<th>{_html.escape(col)}</th>" for col in headers) + '</tr></thead>'
+    thead = '<thead><tr>' + ''.join(th(col) for col in headers) + '</tr></thead>'
     tbody = '<tbody>' + ''.join(rows_html) + '</tbody>'
 
     style = """
@@ -146,6 +156,7 @@ def render_html_table(_STATUS_RANK, STATUS_COLORS, url, label, df: pd.DataFrame,
       .meta { font-size: 12px; color: #666; margin-bottom: 10px; }
     </style>
     """
+
 
     table_html = f"<table>{thead}{tbody}</table>"
 
