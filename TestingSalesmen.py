@@ -3,7 +3,7 @@ import datetime
 from functions.intelliDealerFunctions import retrieve_id_data, read_id_config, calc_log_variables
 from functions.warehouseFunctions import retrieve_server_data, read_dw_config
 from functions.graphFunctions import send_email_graph, read_graph_config
-from functions.evaluationFunctions import compile_change_list_for_user, iter_unique_contact_emails, compile_change_list_for_contact
+from functions.evaluationFunctions import compile_change_list_for_user, generate_dfSalesmen, compile_change_list_for_Salesmen
 from functions.renderingFunctions import load_htmlTable_settings, sort_for_email, render_html_table
 from functions.maintenanceFunctions import remove_old_files
 
@@ -72,8 +72,37 @@ logging.info(' - Changlog dataset loaded')
 # ------------------------------------------------------------
 def main():
     # --- new second pass: email Salesperson/Purchaser directly
-    df = sorted(iter_unique_contact_emails(dfChangeLog))
-    print(df)
+    dfSalesmen = generate_dfSalesmen(dfChangeLog)
+    #print(dfSalesmen)
+
+        # --- new second pass: email Salesperson/Purchaser directly
+    logging.info('Starting Salesperson/Purchaser email pass')
+    contact_sent = 0
+
+    for _, salesman in dfSalesmen.iterrows():
+        email = salesman['Email']
+        name  = salesman['Name']
+
+        df_person = compile_change_list_for_Salesmen(WANTED_COLUMNS, dfChangeLog, email)
+        if df_person.empty:
+            continue
+
+        df_send  = sort_for_email(_STATUS_RANK, df_person.copy())
+        subject  = f"Unit Changes for {name} ({len(df_send)} records)"
+        title    = f"Unit Changes for {name}"
+        subtitle = f"Appearing as Salesperson or Purchaser • Total records: {len(df_send)} (sorted by STATUS)"
+
+        #body_html = render_html_table(_STATUS_RANK, STATUS_COLORS, REPORT_URL, REPORT_LABEL, df_send, title=title, subtitle=subtitle)
+        #send_email_graph(person_email, subject, body_html, graph_conf)
+
+        print(subject)
+        print(title)
+        print(subtitle)
+        print(df_person)
+        contact_sent += 1
+
+    sent += contact_sent
+    logging.info(f'Contact emails sent (sales/purchasers): {contact_sent}')
 
 if __name__ == '__main__':
     main()
