@@ -12,7 +12,7 @@ from functions.maintenanceFunctions import remove_old_files
 # ------------------------------------------------------------
 
 # Assess runtime Interval
-logMinutes,logInterval = calc_log_variables()
+logMinutes, logInterval = calc_log_variables()
 
 jobName = 'UnitChangeProcess'
 

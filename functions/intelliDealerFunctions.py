@@ -82,7 +82,6 @@ def retrieve_id_data(sqlDirectory: str, sqlFileName: str, id_conf: Dict[str, str
         with codecs.open(sql_file_path, 'r', encoding='utf-8-sig') as file:
             sql_query_template = file.read()
 
-        todaysDate = datetime.date.today().strftime('%Y-%m-%d')
         getReceivingdata = sql_query_template.format(logMinutes=logMinutes,logInterval=logInterval)
         logging.info(' - Executing SQL Script and Loading into DataFrame')
         df = pd.read_sql(sql=getReceivingdata, con=connection)
