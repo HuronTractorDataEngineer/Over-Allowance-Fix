@@ -29,7 +29,7 @@ def read_id_config():
     logging.info("IntelliDealer Connection settings retrieved")
     return env_conf
 
-def calc_log_variables(now: datetime | None = None, tz: str = "America/Toronto") -> str:
+def calc_log_variables(now: datetime | None = None, tz: str = "America/Toronto") -> tuple[str, str, str]:
     """
     Calculates Minutes and Interval to be used in SQL statement
     """
@@ -46,19 +46,19 @@ def calc_log_variables(now: datetime | None = None, tz: str = "America/Toronto")
     wd = now.weekday()  # Monday=0 ... Sunday=6
 
     if hh == 9 and wd == 0:
-        return '30','65'
+        return '30','00','65'
     if hh == 9 and wd != 0:
-        return '30','17'
+        return '30','00','17'
     if hh == 16 and mm == 30:
-        return "00",'1'
+        return "00",'30','1'
     
-    return '00','4'
+    return '00','00','2'
 
 # ------------------------------------------------------------
 # Data Retreival functions — Populate Dataframes
 # ------------------------------------------------------------
 
-def retrieve_id_data(sqlDirectory: str, sqlFileName: str, id_conf: Dict[str, str], logMinutes, logInterval) -> pd.DataFrame:
+def retrieve_id_data(sqlDirectory: str, sqlFileName: str, id_conf: Dict[str, str], logMinutesStart, logMinutesEnd, logInterval) -> pd.DataFrame:
     """
     Retrieve data using an SQL script and IntelliDealer connection info from id_conf.
     id_conf must include: server, database, user, password.
@@ -82,7 +82,7 @@ def retrieve_id_data(sqlDirectory: str, sqlFileName: str, id_conf: Dict[str, str
         with codecs.open(sql_file_path, 'r', encoding='utf-8-sig') as file:
             sql_query_template = file.read()
 
-        getReceivingdata = sql_query_template.format(logMinutes=logMinutes,logInterval=logInterval)
+        getReceivingdata = sql_query_template.format(logMinutesStart=logMinutesStart,logMinutesEnd=logMinutesEnd,logInterval=logInterval)
         logging.info(' - Executing SQL Script and Loading into DataFrame')
         df = pd.read_sql(sql=getReceivingdata, con=connection)
         df = df.convert_dtypes()

@@ -33,7 +33,7 @@ def retrieve_server_data(tblName: str, dw_conf: Dict[str, str]) -> pd.DataFrame:
     df = pd.DataFrame()
 
     try:
-        logging.info(f'Connecting to {str(dw_conf['database'])} on {str(dw_conf['server'])}')
+        logging.info(f"Connecting to {dw_conf['database']} on {dw_conf['server']}")
         
         # Connect to SQL Server
         connection = pyodbc.connect(

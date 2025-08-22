@@ -12,7 +12,7 @@ from functions.maintenanceFunctions import remove_old_files
 # ------------------------------------------------------------
 
 # Assess runtime Interval
-logMinutes, logInterval = calc_log_variables()
+logMinutesStart, logMinutesEnd, logInterval = calc_log_variables()
 
 jobName = 'UnitChangeProcess'
 
@@ -63,7 +63,7 @@ logging.info(' - Table Preferences loaded')
 logging.info('Retrieving dataframes...')
 
 # Load IntelliDealer Change log into dataframe
-dfChangeLog   = retrieve_id_data('config', 'ChangeLog', id_conf,logMinutes,logInterval)
+dfChangeLog   = retrieve_id_data('config', 'ChangeLog', id_conf,logMinutesStart,logMinutesEnd,logInterval)
 logging.info(' - Changlog dataset loaded')
 # Load Alert Matrix into dataframe
 dfAlertMatrix = retrieve_server_data('AlertMatrix', dw_conf)
