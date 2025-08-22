@@ -162,14 +162,18 @@ def compile_change_list_for_user(WANTED_COLUMNS, df_log: pd.DataFrame, df_matrix
 # ------------------------------------------------------------
 
 def _find_col(df: pd.DataFrame, target_upper: str) -> str | None:
-    """Return the first column name matching target_upper (case-insensitive), or None."""
+    """
+    Return the first column name matching target_upper (case-insensitive), or None.
+    """
     for c in df.columns:
         if str(c).upper() == target_upper:
             return c
     return None
 
 def compile_change_list_for_Salesmen(WANTED_COLUMNS, df_log: pd.DataFrame, person_email: str) -> pd.DataFrame:
-    """Rows where email matches either Salesperson_Email or Purchaser_Email."""
+    """
+    Rows where email matches either Salesperson_Email or Purchaser_Email.
+    """
     if not person_email:
         return df_log.iloc[0:0]  # empty with same cols
 
@@ -189,6 +193,10 @@ def compile_change_list_for_Salesmen(WANTED_COLUMNS, df_log: pd.DataFrame, perso
     return filtered.loc[:, cols].copy()
 
 def generate_dfSalesmen(df_log: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build Dataframe with unique Salesperson Email and Name
+    Where Salesperson is in Salesperson or Purchaser column of dfChangelog
+    """
     sp_email_col = _find_col(df_log, 'SALESPERSON_EMAIL')
     pu_email_col = _find_col(df_log, 'PURCHASER_EMAIL')
     sp_name_col  = _find_col(df_log, 'SALESPERSON')
