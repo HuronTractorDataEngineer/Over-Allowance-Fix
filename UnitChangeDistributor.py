@@ -77,7 +77,8 @@ logging.info(' - Alert Users Loaded')
 
 # Extend Alert Users to contain Salespeople
 # Disabled for now during pilot phase
-dfAlertUsers = append_Salesmen_to_dfAlertUsers(dfAlertUsers, dfChangeLog)
+
+#dfAlertUsers = append_Salesmen_to_dfAlertUsers(dfAlertUsers, dfChangeLog)
 
 # ------------------------------------------------------------
 # Main Orchestrator
@@ -130,10 +131,14 @@ def main():
 
         # Rendering HTML email
         body_html = render_html_table(_STATUS_RANK, STATUS_COLORS, REPORT_URL, REPORT_LABEL, df_send, title=title, subtitle=subtitle)
-
+        
         # Sending email to user
-        send_email_graph(email, subject, body_html, graph_conf)
-        sent += 1
+        try:
+            send_email_graph(email, subject, body_html, graph_conf)
+            sent += 1
+        except Exception as e:
+            logging.exception(f'Failed for {email}: {e}')
+            continue
 
     # Removing old Log files
     logging.info(f'Removing old logs.')
