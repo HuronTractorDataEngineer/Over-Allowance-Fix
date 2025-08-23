@@ -1,6 +1,5 @@
 import logging
 import datetime
-import pandas as pd
 from functions.intelliDealerFunctions import retrieve_id_data, read_id_config, calc_log_variables
 from functions.warehouseFunctions import retrieve_server_data, read_dw_config
 from functions.graphFunctions import send_email_graph, read_graph_config
