@@ -1,9 +1,10 @@
 import logging
 import datetime
+import pandas as pd
 from functions.intelliDealerFunctions import retrieve_id_data, read_id_config, calc_log_variables
 from functions.warehouseFunctions import retrieve_server_data, read_dw_config
 from functions.graphFunctions import send_email_graph, read_graph_config
-from functions.evaluationFunctions import compile_change_list_for_user
+from functions.evaluationFunctions import compile_change_list_for_user, generate_dfSalesmen, compile_change_list_for_Salesmen
 from functions.renderingFunctions import load_htmlTable_settings, sort_for_email, render_html_table
 from functions.maintenanceFunctions import remove_old_files
 
@@ -58,26 +59,35 @@ logging.info(' - Table Preferences loaded')
 
 
 # ------------------------------------------------------------
-# Load Datasets
+# Load and compile Datasets working datasets
 # ------------------------------------------------------------
 logging.info('Retrieving dataframes...')
 
 # Load IntelliDealer Change log into dataframe
 dfChangeLog   = retrieve_id_data('config', 'ChangeLog', id_conf,logMinutesStart,logMinutesEnd,logInterval)
 logging.info(' - Changlog dataset loaded')
+
 # Load Alert Matrix into dataframe
 dfAlertMatrix = retrieve_server_data('AlertMatrix', dw_conf)
 logging.info(' - Alert Matrix loaded')
+
 # Load Alert Users into dataframe
 dfAlertUsers  = retrieve_server_data('AlertUsers', dw_conf)
 logging.info(' - Alert Users Loaded')
 
+# Extend Alert Users to contain Sales people
+#dfSalesmen = generate_dfSalesmen(dfChangeLog)
+#dfSalesmen = generate_dfSalesmen(dfChangeLog)
+#dfSalesmen = dfSalesmen.assign(Role='Salesperson', Branch='All')
+#dfAlertUsers = pd.concat([dfAlertUsers, dfSalesmen], ignore_index=True)
 
 # ------------------------------------------------------------
 # Main Orchestrator
 # ------------------------------------------------------------
 def main():
-    """Compile per-user change lists, and email results via Graph."""
+    """
+    Compile per-user change lists, and email results via Graph.
+    """
 
     # Initialize Counts
     logging.info('Initilizing Counts')
@@ -85,21 +95,26 @@ def main():
     sent = 0
 
     # Loop through compiling table and sending email for each user.
-    logging.info('Starting Processing Loop')
+    logging.info('Starting Alert User Processing Loop')
     for _, user in dfAlertUsers.iterrows():
 
         # Assign Current User attributes
         email = str(user.get('Email') or '').strip()
+        name = str(user.get('Name') or '').strip()
         role  = str(user.get('Role')  or '').strip()
         branch= str(user.get('Branch')or '').strip()
 
         # Checking for missing values
-        if not email or not role or not branch:
-            logging.warning(f'Skipping user with missing fields: email={email}, role={role}, branch={branch}')
+        if not email or not name or not role or not branch:
+            logging.warning(f'Skipping user with missing fields: email={email}, name={name}, role={role}, branch={branch}')
             continue
+        
+        # Compile Chance List choosing correct method based on if Role is Salesperson
+        if role == "Salesperson":
+            df_user = compile_change_list_for_Salesmen(WANTED_COLUMNS, dfChangeLog, email)
+        else:
+            df_user = compile_change_list_for_user(WANTED_COLUMNS, dfChangeLog, dfAlertMatrix, branch, role)
 
-        # Compiling list for user
-        df_user = compile_change_list_for_user(WANTED_COLUMNS, dfChangeLog, dfAlertMatrix, branch, role)
         processed += 1
 
         # Confirming List contains data, if not record in log and skip to next user
@@ -111,8 +126,8 @@ def main():
         df_send = sort_for_email(_STATUS_RANK, df_user.copy())
 
         # Setting Email variables
-        subject = f"Unit Changes for {branch} — {role} ({len(df_send)} records)"
-        title   = f"Unit Changes for {branch} — {role}"
+        subject = f"Unit Changes for {name} — {role} ({len(df_send)} records)"
+        title   = f"Unit Changes for {name} — {role}"
         subtitle= f"Total records: {len(df_send)} (sorted by STATUS)"
 
         # Rendering HTML email
@@ -126,8 +141,7 @@ def main():
     logging.info(f'Removing old logs.')
     remove_old_files('logs', 10)
 
-    logging.info(f'Processing complete. Users processed: {processed}; Emails sent: {sent}.')
-
+    logging.info(f'User Processing complete. Users processed: {processed}; Emails sent: {sent}.')  
 
 if __name__ == '__main__':
     main()

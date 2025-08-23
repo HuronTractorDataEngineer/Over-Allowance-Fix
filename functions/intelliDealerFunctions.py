@@ -51,14 +51,14 @@ def calc_log_variables(now: datetime | None = None, tz: str = "America/Toronto")
         return '30','00','17'
     if hh == 16 and mm == 30:
         return "00",'30','1'
-    
+
     return '00','00','2'
 
 # ------------------------------------------------------------
 # Data Retreival functions — Populate Dataframes
 # ------------------------------------------------------------
 
-def retrieve_id_data(sqlDirectory: str, sqlFileName: str, id_conf: Dict[str, str], logMinutesStart, logMinutesEnd, logInterval) -> pd.DataFrame:
+def retrieve_id_data(sqlDirectory: str, sqlFileName: str, id_conf: Dict[str, str], logMinutesStart: str, logMinutesEnd: str, logInterval: str) -> pd.DataFrame:
     """
     Retrieve data using an SQL script and IntelliDealer connection info from id_conf.
     id_conf must include: server, database, user, password.

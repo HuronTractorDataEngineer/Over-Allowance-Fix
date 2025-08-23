@@ -1,5 +1,6 @@
 import logging
 import datetime
+import pandas as pd
 from functions.intelliDealerFunctions import retrieve_id_data, read_id_config, calc_log_variables
 from functions.warehouseFunctions import retrieve_server_data, read_dw_config
 from functions.graphFunctions import send_email_graph, read_graph_config
@@ -58,7 +59,7 @@ logging.info(' - Table Preferences loaded')
 
 
 # ------------------------------------------------------------
-# Load Datasets
+# Load and compile Datasets working datasets
 # ------------------------------------------------------------
 logging.info('Retrieving dataframes...')
 
@@ -66,44 +67,21 @@ logging.info('Retrieving dataframes...')
 dfChangeLog   = retrieve_id_data('config', 'ChangeLog', id_conf,logMinutesStart,logMinutesEnd,logInterval)
 logging.info(' - Changlog dataset loaded')
 
+# Load Alert Matrix into dataframe
+dfAlertMatrix = retrieve_server_data('AlertMatrix', dw_conf)
+logging.info(' - Alert Matrix loaded')
 
-# ------------------------------------------------------------
-# Main Orchestrator
-# ------------------------------------------------------------
-def main():
-    # Add to dataframe creation section after dfChangelog is created
-    dfSalesmen = generate_dfSalesmen(dfChangeLog)
-    #print(dfSalesmen)
+# Load Alert Users into dataframe
+dfAlertUsers  = retrieve_server_data('AlertUsers', dw_conf)
+logging.info(' - Alert Users Loaded')
 
-    # Add below user loop to loop through sales people
-    # Remove prints and un comment the render and send lines
-    logging.info('Starting Salesperson/Purchaser email pass')
-    salesmen_sent = 0
+# Create Salesmen Dataframe from dfChangeLog
+dfSalesmen = generate_dfSalesmen(dfChangeLog)
+dfSalesmen = dfSalesmen.assign(Role='Salesperson', Branch='All')
+dfAlertUsers = pd.concat([dfAlertUsers, dfSalesmen], ignore_index=True)
+print(dfAlertUsers)
+print(dfSalesmen)
 
-    for _, salesman in dfSalesmen.iterrows():
-        email = salesman['Email']
-        name  = salesman['Name']
 
-        df_person = compile_change_list_for_Salesmen(WANTED_COLUMNS, dfChangeLog, email)
-        if df_person.empty:
-            continue
 
-        df_send  = sort_for_email(_STATUS_RANK, df_person.copy())
-        subject  = f"Unit Changes for {name} ({len(df_send)} records)"
-        title    = f"Unit Changes for {name}"
-        subtitle = f"Total Records where you are Salesperson or Purchaser: {len(df_send)} (sorted by STATUS)"
-
-        #body_html = render_html_table(_STATUS_RANK, STATUS_COLORS, REPORT_URL, REPORT_LABEL, df_send, title=title, subtitle=subtitle)
-        #send_email_graph(person_email, subject, body_html, graph_conf)
-
-        print(subject)
-        print(title)
-        print(subtitle)
-        print(df_person)
-        salesman_sent += 1
-
-    sent += salesman_sent
-    logging.info(f'Contact emails sent (sales/purchasers): {salesman_sent}')
-
-if __name__ == '__main__':
-    main()
+print(dfAlertUsers)
