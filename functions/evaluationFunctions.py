@@ -192,7 +192,7 @@ def compile_change_list_for_Salesmen(WANTED_COLUMNS, df_log: pd.DataFrame, perso
     cols = [c for c in WANTED_COLUMNS if c in filtered.columns]
     return filtered.loc[:, cols].copy()
 
-def generate_dfSalesmen(df_log: pd.DataFrame) -> pd.DataFrame:
+def append_Salesmen_to_dfAlertUsers(dfAlertUsers: pd.DataFrame, df_log: pd.DataFrame) -> pd.DataFrame:
     """
     Build Dataframe with unique Salesperson Email and Name
     Where Salesperson is in Salesperson or Purchaser column of dfChangelog
@@ -240,4 +240,10 @@ def generate_dfSalesmen(df_log: pd.DataFrame) -> pd.DataFrame:
 
     # Return a stable, printable DataFrame
     rows = [{'Email': e, 'Name': mapping[e]} for e in sorted(mapping)]
-    return pd.DataFrame(rows, columns=['Email', 'Name'])
+
+    dfSalesmen = pd.DataFrame(rows, columns=['Email', 'Name'])
+    dfSalesmen = dfSalesmen.assign(Role='Salesperson', Branch='All')
+    dfAlertUsers = pd.concat([dfAlertUsers, dfSalesmen], ignore_index=True)
+
+    return dfAlertUsers
+

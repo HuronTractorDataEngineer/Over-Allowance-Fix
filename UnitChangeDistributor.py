@@ -4,7 +4,7 @@ import pandas as pd
 from functions.intelliDealerFunctions import retrieve_id_data, read_id_config, calc_log_variables
 from functions.warehouseFunctions import retrieve_server_data, read_dw_config
 from functions.graphFunctions import send_email_graph, read_graph_config
-from functions.evaluationFunctions import compile_change_list_for_user, generate_dfSalesmen, compile_change_list_for_Salesmen
+from functions.evaluationFunctions import compile_change_list_for_user, append_Salesmen_to_dfAlertUsers, compile_change_list_for_Salesmen
 from functions.renderingFunctions import load_htmlTable_settings, sort_for_email, render_html_table
 from functions.maintenanceFunctions import remove_old_files
 
@@ -75,11 +75,9 @@ logging.info(' - Alert Matrix loaded')
 dfAlertUsers  = retrieve_server_data('AlertUsers', dw_conf)
 logging.info(' - Alert Users Loaded')
 
-# Extend Alert Users to contain Sales people
-#dfSalesmen = generate_dfSalesmen(dfChangeLog)
-#dfSalesmen = generate_dfSalesmen(dfChangeLog)
-#dfSalesmen = dfSalesmen.assign(Role='Salesperson', Branch='All')
-#dfAlertUsers = pd.concat([dfAlertUsers, dfSalesmen], ignore_index=True)
+# Extend Alert Users to contain Salespeople
+# Disabled for now during pilot phase
+dfAlertUsers = append_Salesmen_to_dfAlertUsers(dfAlertUsers, dfChangeLog)
 
 # ------------------------------------------------------------
 # Main Orchestrator
