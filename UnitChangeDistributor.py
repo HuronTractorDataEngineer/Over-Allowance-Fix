@@ -3,7 +3,7 @@ import datetime
 from functions.intelliDealerFunctions import retrieve_id_data, read_id_config, calc_log_variables
 from functions.warehouseFunctions import retrieve_server_data, read_dw_config
 from functions.graphFunctions import send_email_graph, read_graph_config
-from functions.evaluationFunctions import compile_change_list_for_user, append_Salesmen_to_dfAlertUsers, compile_change_list_for_Salesmen
+from functions.evaluationFunctions import compile_change_list_for_user, compile_change_list_for_Salesmen, append_Salesmen_to_dfAlertUsers
 from functions.renderingFunctions import load_htmlTable_settings, sort_for_email, render_html_table
 from functions.maintenanceFunctions import remove_old_files
 
@@ -11,11 +11,11 @@ from functions.maintenanceFunctions import remove_old_files
 # Job and Logging Configuration
 # ------------------------------------------------------------
 
-# Assess runtime Interval
+# Set Runtime variables
 logMinutesStart, logMinutesEnd, logInterval = calc_log_variables()
-
 jobName = 'UnitChangeProcess'
 
+# Initialize Log file
 log_filename = datetime.datetime.now().strftime(f'logs/{jobName}_%Y-%m-%d_%H-%M-%S.log')
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(levelname)s: %(message)s',
@@ -58,7 +58,7 @@ logging.info(' - Table Preferences loaded')
 
 
 # ------------------------------------------------------------
-# Load and compile Datasets working datasets
+# Load and compile working datasets
 # ------------------------------------------------------------
 logging.info('Retrieving dataframes...')
 
