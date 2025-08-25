@@ -76,7 +76,6 @@ logging.info(' - Alert Users Loaded')
 
 # Extend Alert Users to contain Salespeople
 # Disabled for now during pilot phase
-
 #dfAlertUsers = append_Salesmen_to_dfAlertUsers(dfAlertUsers, dfChangeLog)
 
 # ------------------------------------------------------------
