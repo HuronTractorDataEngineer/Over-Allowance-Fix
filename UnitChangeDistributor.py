@@ -111,7 +111,7 @@ def main():
         if role == "Salesperson":
             df_user = compile_change_list_for_Salesmen(WANTED_COLUMNS, dfChangeLog, email)
         else:
-            df_user = compile_change_list_for_user(WANTED_COLUMNS, dfChangeLog, dfAlertMatrix, branch, role)
+            df_user = compile_change_list_for_user(WANTED_COLUMNS, dfChangeLog, dfAlertMatrix, email, branch, role)
 
         processed += 1
 
