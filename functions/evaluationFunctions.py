@@ -3,6 +3,126 @@ from typing import Optional, Set
 import pandas as pd
 
 # ------------------------------------------------------------
+# Helper functions — Salesperson and Purchaser Evaluation
+# ------------------------------------------------------------
+
+def append_Salesmen_to_dfAlertUsers(dfAlertUsers: pd.DataFrame, df_log: pd.DataFrame) -> pd.DataFrame:
+    """
+    Append unique Salesperson entries from df_log to dfAlertUsers, skipping emails already present.
+
+    - Reads (if available) SALESPERSON_EMAIL/SALESPERSON and PURCHASER_EMAIL/PURCHASER.
+    - Normalizes emails (trim + casefold, must contain '@'); prefers the longer non-empty name per email.
+    - Filters out emails already in dfAlertUsers['Email'] (case-insensitive).
+    - Appends new rows with Role='Salesperson' and Branch='All'.
+
+    Returns:
+        pd.DataFrame: dfAlertUsers with new Salesperson rows appended (inputs not modified in place).
+    """
+    sp_email_col = _find_col(df_log, 'SALESPERSON_EMAIL')
+    pu_email_col = _find_col(df_log, 'PURCHASER_EMAIL')
+    sp_name_col  = _find_col(df_log, 'SALESPERSON')
+    pu_name_col  = _find_col(df_log, 'PURCHASER')
+
+    mapping: dict[str, str] = {}
+
+    def _clean_email(x) -> str:
+        # Drop NA/None/NaN; normalize whitespace & case
+        if pd.isna(x):
+            return ''
+        s = str(x).strip()
+        return s.lower() if '@' in s else ''
+
+    def _clean_name(x) -> str:
+        if pd.isna(x):
+            return ''
+        return str(x).strip()
+
+    def add(email, name):
+        e = _clean_email(email)
+        if not e:
+            return
+        n = _clean_name(name) or e  # fallback to email if name missing
+        # prefer the longer, non-empty name if we see the same email twice
+        prev = mapping.get(e)
+        if not prev or (n and len(n) > len(prev)):
+            mapping[e] = n
+
+    # Collect from Salesperson columns
+    if sp_email_col:
+        sp_names = df_log[sp_name_col] if sp_name_col else None
+        for em, nm in zip(df_log[sp_email_col], (sp_names if sp_names is not None else [None] * len(df_log))):
+            add(em, nm)
+
+    # Collect from Purchaser columns
+    if pu_email_col:
+        pu_names = df_log[pu_name_col] if pu_name_col else None
+        for em, nm in zip(df_log[pu_email_col], (pu_names if pu_names is not None else [None] * len(df_log))):
+            add(em, nm)
+
+    # Return a stable, printable DataFrame
+    rows = [{'Email': e, 'Name': mapping[e]} for e in sorted(mapping)]
+    dfSalesmen = pd.DataFrame(rows, columns=['Email', 'Name'])
+
+    # Normalize emails before filtering
+    existing = set(
+        dfAlertUsers['Email']
+        .fillna('')
+        .astype(str)
+        .str.strip()
+        .str.casefold()
+    )
+
+    dfSalesmen['_norm'] = (
+        dfSalesmen['Email']
+        .fillna('')
+        .astype(str)
+        .str.strip()
+        .str.casefold()
+    )
+
+    # Make sure dfSalesmen doesn't contain emails already in Users
+    dfSalesmen = dfSalesmen[~dfSalesmen['_norm'].isin(existing)].drop(columns=['_norm'])
+
+    # Add Role and Branch columns to Salesperson
+    dfSalesmen = dfSalesmen.assign(Role='Salesperson', Branch='All')
+
+    # Append Salesmen to Users df
+    dfAlertUsers = pd.concat([dfAlertUsers, dfSalesmen], ignore_index=True)
+
+    return dfAlertUsers
+
+def _find_col(df: pd.DataFrame, target_upper: str) -> str | None:
+    """
+    Return the first column name matching target_upper (case-insensitive), or None.
+    """
+    for c in df.columns:
+        if str(c).upper() == target_upper:
+            return c
+    return None
+
+def compile_change_list_for_Salesmen(WANTED_COLUMNS, df_log: pd.DataFrame, person_email: str) -> pd.DataFrame:
+    """
+    Rows where email matches either Salesperson_Email or Purchaser_Email.
+    """
+    if not person_email:
+        return df_log.iloc[0:0]  # empty with same cols
+
+    sp_col = _find_col(df_log, 'SALESPERSON_EMAIL')
+    pu_col = _find_col(df_log, 'PURCHASER_EMAIL')
+    if not sp_col and not pu_col:
+        logging.error('Expected SALESPERSON_EMAIL / PURCHASER_EMAIL not found in dfChangeLog.')
+        return df_log.iloc[0:0]
+
+    e = person_email.strip().casefold()
+    sp = df_log[sp_col].fillna('').astype(str).str.strip().str.casefold() if sp_col else pd.Series(False, index=df_log.index)
+    pu = df_log[pu_col].fillna('').astype(str).str.strip().str.casefold() if pu_col else pd.Series(False, index=df_log.index)
+    filtered = df_log.loc[(sp == e) | (pu == e)]
+
+    # Project to your usual email table columns
+    cols = [c for c in WANTED_COLUMNS if c in filtered.columns]
+    return filtered.loc[:, cols].copy()
+
+# ------------------------------------------------------------
 # Helper functions — AlertMatrix rule evaluation
 # ------------------------------------------------------------
 
@@ -116,20 +236,22 @@ def _branch_mask(df_log: pd.DataFrame, user_branch: str) -> pd.Series:
     b_norm = b.casefold()
     return (prev_b == b_norm) | (curr_b == b_norm)
 
-def compile_change_list_for_user(WANTED_COLUMNS, df_log: pd.DataFrame, df_matrix: pd.DataFrame, user_branch: str, user_role: str) -> pd.DataFrame:
+def compile_change_list_for_user(WANTED_COLUMNS, df_log: pd.DataFrame, df_matrix: pd.DataFrame, user_email: str, user_branch: str, user_role: str) -> pd.DataFrame:
     """
-    Build a per-user change list by branch + role-based AlertMatrix rules.
+    Build a per-user change list from df_log using AlertMatrix rules, plus any units
+    where the user is a Salesperson or Purchaser.
 
-    Applies:
-    - Branch filter: PREVIOUS_BRANCH == user_branch OR CURRENT_BRANCH == user_branch;
-    skipped if user_branch indicates ALL.
-    - Role rules: OR across AlertMatrix rows for the user's role; each row is an
-    AND of field rules and an optional change mapping. If no rules exist for the
-    role, only the branch filter is applied.
+    Process:
+    - Branch filter: keep rows where PREVIOUS_BRANCH==user_branch OR CURRENT_BRANCH==user_branch;
+    skipped if `user_branch` indicates "All".
+    - Role filter: OR-combine all AlertMatrix rows for `user_role` (each row’s conditions ANDed internally).
+    If no rules exist, use branch-only.
+    - Sales links: union with rows from `compile_change_list_for_Salesmen(..., user_email)`, so units
+    where the user appears in SALESPERSON_EMAIL or PURCHASER_EMAIL are included (even if outside branch/rules).
+    - Columns: project to `WANTED_COLUMNS` (log & omit missing) and drop duplicate rows.
 
     Returns:
-        A copy of the filtered DataFrame with columns limited to WANTED_COLUMNS
-        (missing columns are logged and omitted).
+        pd.DataFrame: Deduplicated change list limited to `WANTED_COLUMNS`.
     """
     # Branch mask (handles All)
     branch_mask = _branch_mask(df_log, user_branch)
@@ -155,95 +277,11 @@ def compile_change_list_for_user(WANTED_COLUMNS, df_log: pd.DataFrame, df_matrix
     else:
         cols = WANTED_COLUMNS
 
-    return filtered.loc[:, cols].copy()
+    user_df = filtered.loc[:, cols].copy()
+    salesperson_df = compile_change_list_for_Salesmen(WANTED_COLUMNS, df_log, user_email)
 
-# ------------------------------------------------------------
-# Helper functions — Salesperson and Purchaser Evaluation
-# ------------------------------------------------------------
+    # 5) Union + exact row de-dupe on projected columns
+    final_df = pd.concat([user_df, salesperson_df], ignore_index=True)
+    final_df = final_df.drop_duplicates().reset_index(drop=True)
 
-def _find_col(df: pd.DataFrame, target_upper: str) -> str | None:
-    """
-    Return the first column name matching target_upper (case-insensitive), or None.
-    """
-    for c in df.columns:
-        if str(c).upper() == target_upper:
-            return c
-    return None
-
-def compile_change_list_for_Salesmen(WANTED_COLUMNS, df_log: pd.DataFrame, person_email: str) -> pd.DataFrame:
-    """
-    Rows where email matches either Salesperson_Email or Purchaser_Email.
-    """
-    if not person_email:
-        return df_log.iloc[0:0]  # empty with same cols
-
-    sp_col = _find_col(df_log, 'SALESPERSON_EMAIL')
-    pu_col = _find_col(df_log, 'PURCHASER_EMAIL')
-    if not sp_col and not pu_col:
-        logging.error('Expected SALESPERSON_EMAIL / PURCHASER_EMAIL not found in dfChangeLog.')
-        return df_log.iloc[0:0]
-
-    e = person_email.strip().casefold()
-    sp = df_log[sp_col].fillna('').astype(str).str.strip().str.casefold() if sp_col else pd.Series(False, index=df_log.index)
-    pu = df_log[pu_col].fillna('').astype(str).str.strip().str.casefold() if pu_col else pd.Series(False, index=df_log.index)
-    filtered = df_log.loc[(sp == e) | (pu == e)]
-
-    # Project to your usual email table columns
-    cols = [c for c in WANTED_COLUMNS if c in filtered.columns]
-    return filtered.loc[:, cols].copy()
-
-def append_Salesmen_to_dfAlertUsers(dfAlertUsers: pd.DataFrame, df_log: pd.DataFrame) -> pd.DataFrame:
-    """
-    Build Dataframe with unique Salesperson Email and Name
-    Where Salesperson is in Salesperson or Purchaser column of dfChangelog
-    """
-    sp_email_col = _find_col(df_log, 'SALESPERSON_EMAIL')
-    pu_email_col = _find_col(df_log, 'PURCHASER_EMAIL')
-    sp_name_col  = _find_col(df_log, 'SALESPERSON')
-    pu_name_col  = _find_col(df_log, 'PURCHASER')
-
-    mapping: dict[str, str] = {}
-
-    def _clean_email(x) -> str:
-        # Drop NA/None/NaN; normalize whitespace & case
-        if pd.isna(x):
-            return ''
-        s = str(x).strip()
-        return s.lower() if '@' in s else ''
-
-    def _clean_name(x) -> str:
-        if pd.isna(x):
-            return ''
-        return str(x).strip()
-
-    def add(email, name):
-        e = _clean_email(email)
-        if not e:
-            return
-        n = _clean_name(name) or e  # fallback to email if name missing
-        # prefer the longer, non-empty name if we see the same email twice
-        prev = mapping.get(e)
-        if not prev or (n and len(n) > len(prev)):
-            mapping[e] = n
-
-    # Collect from Salesperson columns
-    if sp_email_col:
-        sp_names = df_log[sp_name_col] if sp_name_col else None
-        for em, nm in zip(df_log[sp_email_col], (sp_names if sp_names is not None else [None] * len(df_log))):
-            add(em, nm)
-
-    # Collect from Purchaser columns
-    if pu_email_col:
-        pu_names = df_log[pu_name_col] if pu_name_col else None
-        for em, nm in zip(df_log[pu_email_col], (pu_names if pu_names is not None else [None] * len(df_log))):
-            add(em, nm)
-
-    # Return a stable, printable DataFrame
-    rows = [{'Email': e, 'Name': mapping[e]} for e in sorted(mapping)]
-
-    dfSalesmen = pd.DataFrame(rows, columns=['Email', 'Name'])
-    dfSalesmen = dfSalesmen.assign(Role='Salesperson', Branch='All')
-    dfAlertUsers = pd.concat([dfAlertUsers, dfSalesmen], ignore_index=True)
-
-    return dfAlertUsers
-
+    return final_df
