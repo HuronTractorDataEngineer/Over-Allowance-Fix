@@ -64,7 +64,7 @@ logging.info('Retrieving dataframes...')
 
 # Load IntelliDealer Change log into dataframe
 dfChangeLog   = retrieve_id_data('config', 'ChangeLog', id_conf,logMinutesStart,logMinutesEnd,logInterval)
-logging.info(' - Changlog dataset loaded')
+logging.info(' - Changelog dataset loaded')
 
 # Load Alert Matrix into dataframe
 dfAlertMatrix = retrieve_server_data('AlertMatrix', dw_conf)
@@ -87,7 +87,7 @@ def main():
     """
 
     # Initialize Counts
-    logging.info('Initilizing Counts')
+    logging.info('Initializing Counts')
     processed = 0
     sent = 0
 

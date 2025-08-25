@@ -1,7 +1,6 @@
 import pyodbc
 import codecs
 import logging
-import datetime
 import pandas as pd
 import os
 from typing import Dict
