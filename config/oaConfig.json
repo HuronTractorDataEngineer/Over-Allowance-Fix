@@ -1,0 +1,18 @@
+{
+  "wanted_columns": [
+    "STATUS",
+    "BRANCH",
+    "INVOICE",
+    "LINE",
+    "TRADE_IN",
+    "CURRENT_OVER_ACC",
+    "SOLD_UNIT",
+    "SALE_ACC",
+    "SOLD_TYPE",
+    "SALESPERSON",
+    "CORRECT_OVER_ACC"
+  ],
+  "email": {
+    "cc": "bsheeler@hurontractor.com"
+  }
+}
