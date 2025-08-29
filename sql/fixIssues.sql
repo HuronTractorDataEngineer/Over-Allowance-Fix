@@ -10,4 +10,4 @@ set
         where a.VDCO||a.VDDIV||a.VDBR||a.VDINV||a.VDLIN||a.VDTYP||a.VDSEQ = b.Trade_Key)
 where
    a.VDCO||a.VDDIV||a.VDBR||a.VDINV||a.VDLIN||a.VDTYP||a.VDSEQ in
-        (select Trade_Key from DMOVRACCF)
+        (select Trade_Key from DMOVRACCF where STATUS <> 'Invoiced')

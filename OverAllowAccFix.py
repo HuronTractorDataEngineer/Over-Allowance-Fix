@@ -10,8 +10,8 @@ from functions.maintenanceFunctions import remove_old_files
 # ------------------------------------------------------------
 # Job and Logging Configuration
 # ------------------------------------------------------------
-
 jobName = 'OverAllowAccFix'
+sqlDirectory = 'sql'
 
 # Initialize Log file
 log_filename = datetime.datetime.now().strftime(f'logs/{jobName}_%Y-%m-%d_%H-%M-%S.log')
@@ -32,7 +32,28 @@ logging.info('Loading Connection Settings...')
 id_conf = read_id_config()
 logging.info(' - IntelliDealer Config loaded')
 
-sqlDirectory = 'sql'
+# Graph settings (required for this version)
+graph_conf = read_graph_config()
+logging.info(' - Microsoft Graph Config loaded')
+
+
+# ------------------------------------------------------------
+# Load HTML Table Preferences
+# ------------------------------------------------------------
+logging.info('Loading HTML Table Preferences...')
+
+# Load HTML Table Settings
+WANTED_COLUMNS, STATUS_COLORS, STATUS_ORDER, REPORT_URL, REPORT_LABEL = load_htmlTable_settings()
+
+# Precompute rank mapping for fast sort (higher rank = earlier in table)
+# reversed() + start=1 → items at the start of STATUS_ORDER get the highest rank
+_STATUS_RANK = {s.lower(): rank for rank, s in enumerate(reversed(STATUS_ORDER), start=1)}
+logging.info(' - Table Preferences loaded')
+
+
+# ------------------------------------------------------------
+# Load and compile working datasets
+# ------------------------------------------------------------
 #id_sqlScript(sqlDirectory, 'removeOldIssues', id_conf)
 #id_sqlScript(sqlDirectory, 'insertNewIssues', id_conf)
 #id_sqlScript(sqlDirectory, 'fixIssues', id_conf)
