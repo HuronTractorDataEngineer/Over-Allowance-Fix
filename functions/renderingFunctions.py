@@ -108,13 +108,6 @@ def render_html_table(_STATUS_RANK, STATUS_COLORS, url, label, df: pd.DataFrame,
     Returns:
         str: Complete HTML document as a string.
     """
-    # Format Retail
-    df['RETAIL'] = (
-        pd.to_numeric(df['RETAIL'], errors='coerce')
-        .map(lambda x: f"${x:,.2f}" if pd.notna(x) else '')
-    )
-    # Ensure sorted
-    df = sort_for_email(_STATUS_RANK, df)
 
     # Build HTML table with inline row background colors for maximum email-client compatibility
     headers = list(df.columns)
@@ -168,14 +161,5 @@ def render_html_table(_STATUS_RANK, STATUS_COLORS, url, label, df: pd.DataFrame,
       </body>
     </html>
     """
-    cta_html = (
-        f"<div style='margin:12px 0 16px'>"
-        f"<a href='{url}' target='_blank' rel='noopener' "
-        f"style='display:inline-block;padding:10px 14px;border-radius:8px;"
-        f"background:#0f6cbd;color:#fff;text-decoration:none;font-weight:600'>"
-        f"{label}</a></div>"
-        )
-    
-    html = html.replace("</h2>", f"</h2>{cta_html}")
 
     return html

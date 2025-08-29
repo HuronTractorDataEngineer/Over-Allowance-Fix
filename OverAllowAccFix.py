@@ -116,7 +116,26 @@ def main():
         # Sort by STATUS priority then Invoice and render colored table
         df_send = sort_for_email(_STATUS_RANK, df_user.copy())
 
-        print(df_send)
+        recordCount = len(df_send)
+        fixedCount = len(df_send['STATUS'] != 'Invoiced')
+
+        # Setting Email variables
+        subject = f"Overallowance Account Errors found for {name} ({recordCount} records)"
+        title   = f"Pending and Released fixed / Invoiced requires journal"
+        subtitle= f"Total Pending and Released records fixed: {fixedCount} (sorted by STATUS)"
+
+        # Rendering HTML email
+        body_html = render_html_table(_STATUS_RANK, STATUS_COLORS, df_send, title=title, subtitle=subtitle)
+        
+        # Sending email to user
+        try:
+            send_email_graph('jkourtesis@hurontractor.com', subject, body_html, graph_conf)
+            sent += 1
+        except Exception as e:
+            logging.exception(f'Failed for {email}: {e}')
+            continue
+
+        #print(body_html)
 
 
 if __name__ == '__main__':
