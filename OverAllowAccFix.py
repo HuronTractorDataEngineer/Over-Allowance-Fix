@@ -43,7 +43,7 @@ logging.info(' - Microsoft Graph Config loaded')
 logging.info('Loading HTML Table Preferences...')
 
 # Load HTML Table Settings
-WANTED_COLUMNS, STATUS_COLORS, STATUS_ORDER, REPORT_URL, REPORT_LABEL = load_htmlTable_settings()
+WANTED_COLUMNS, STATUS_COLORS, STATUS_ORDER, REPORT_CC = load_htmlTable_settings()
 
 # Precompute rank mapping for fast sort (higher rank = earlier in table)
 # reversed() + start=1 → items at the start of STATUS_ORDER get the highest rank
@@ -52,14 +52,26 @@ logging.info(' - Table Preferences loaded')
 
 
 # ------------------------------------------------------------
+# Find, log and fix Overallowance Account issues
+# ------------------------------------------------------------
+logging.info('Processing Fixes...')
+
+id_sqlScript(sqlDirectory, 'removeOldIssues', id_conf)
+logging.info(' - Removed old issues')
+
+id_sqlScript(sqlDirectory, 'insertNewIssues', id_conf)
+logging.info(' - Logged New issues')
+
+id_sqlScript(sqlDirectory, 'fixIssues', id_conf)
+logging.info(' - Fixed pending and released issues')
+
+# ------------------------------------------------------------
 # Load and compile working datasets
 # ------------------------------------------------------------
-#id_sqlScript(sqlDirectory, 'removeOldIssues', id_conf)
-#id_sqlScript(sqlDirectory, 'insertNewIssues', id_conf)
-#id_sqlScript(sqlDirectory, 'fixIssues', id_conf)
+logging.info('Retrieving dataframes...')
+dfErrorLog = retrieve_id_data(sqlDirectory, 'errorLog', id_conf)
 
-df = retrieve_id_data(sqlDirectory, 'pullData', id_conf)
-print(df)
+print(dfErrorLog)
 
-dfUsers = build_dfUsers_from_df(df)
+dfUsers = build_dfUsers_from_df(dfErrorLog)
 print(dfUsers)
