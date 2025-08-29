@@ -13,6 +13,16 @@
     "CURRENT_OVER_ACC",
     "CORRECT_OVER_ACC"
   ],
+  "status_order": [
+    "Invoiced",
+    "Released",
+    "Pending"
+  ],
+  "status_colors": {
+    "Invoiced":       "#F5B7B1",
+    "Released":   "#F5D3B1",
+    "Pending":     "#F5ECB1"
+  },
   "email": {
     "cc": "bsheeler@hurontractor.com"
   }

@@ -1,6 +1,6 @@
 import logging
 import datetime
-from functions.intelliDealerFunctions import id_sqlScript, retrieve_id_data, read_id_config, calc_log_variables
+from functions.intelliDealerFunctions import id_sqlScript, retrieve_id_data, read_id_config
 from functions.warehouseFunctions import retrieve_server_data, read_dw_config
 from functions.graphFunctions import send_email_graph, read_graph_config
 from functions.evaluationFunctions import build_dfUsers_from_df, compile_change_list_for_user, compile_change_list_for_Salesmen, append_Salesmen_to_dfAlertUsers
@@ -11,8 +11,6 @@ from functions.maintenanceFunctions import remove_old_files
 # Job and Logging Configuration
 # ------------------------------------------------------------
 
-# Set Runtime variables
-logMinutesStart, logMinutesEnd, logInterval = calc_log_variables()
 jobName = 'OverAllowAccFix'
 
 # Initialize Log file
