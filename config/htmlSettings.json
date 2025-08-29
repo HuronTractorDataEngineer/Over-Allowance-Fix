@@ -1,49 +1,19 @@
 {
   "wanted_columns": [
-    "USER_ID",
-    "EVENT_TS",
-    "STOCK_NUMBER",
-    "DESCRIPTION",
-    "TYPE",
-    "RETAIL",
-    "SALESPERSON",
-    "PURCHASER",
-    "CUSTOMER",
-    "NAME",
-    "CHANGE_TYPE",
-    "STATUS_CHANGE",
     "STATUS",
-    "BRANCH_CHANGE",
-    "PREVIOUS_BRANCH",
-    "CURRENT_BRANCH",
-    "WO_LIST"
+    "BRANCH",
+    "INVOICE",
+    "INVOICE_DATE",
+    "SEGMENT",
+    "TRADE_IN",
+    "SOLD_UNIT",
+    "SALE_ACC",
+    "SOLD_TYPE",
+    "SALESPERSON",
+    "CURRENT_OVER_ACC",
+    "CORRECT_OVER_ACC"
   ],
-  "status_order": [
-    "Sold",
-    "Pre-Sold",
-    "Inventory",
-    "Rental",
-    "On Order",
-    "Invoiced",
-    "Deleted",
-    "Transfered",
-    "Transferred",
-    "Quoted"
-  ],
-  "status_colors": {
-    "Inventory":  "#D6EAF8",
-    "Rental":     "#AED6F1",
-    "Sold":       "#F5B7B1",
-    "On Order":   "#F9E79F",
-    "Quoted":     "#E8DAEF",
-    "Pre-Sold":   "#D2B4DE",
-    "Deleted":    "#D5DBDB",
-    "Transfered": "#A3E4D7",
-    "Transferred":"#A3E4D7",
-    "Invoiced":   "#FDEBD0"
-  },
-  "report": {
-    "url": "https://app.fabric.microsoft.com/Redirect?action=OpenReport&appId=2151d95d-5675-49bd-abe2-337851a7858e&reportObjectId=5e1e7588-4f12-499c-8b6d-11d3d0185376&ctid=cf996bb6-0b57-47f3-86f0-c645dae07e15&reportPage=e536d8660e63431d1a94&pbi_source=appShareLink&portalSessionId=23df4582-6027-4a62-b101-211bc564ef01",
-    "label": "Click here for past changes"
+  "email": {
+    "cc": "bsheeler@hurontractor.com"
   }
 }

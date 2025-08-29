@@ -34,7 +34,7 @@ logging.info('Loading Connection Settings...')
 id_conf = read_id_config()
 logging.info(' - IntelliDealer Config loaded')
 
-sqlDirectory = 'sql\OverAllowAccFix'
+sqlDirectory = 'sql'
 #id_sqlScript(sqlDirectory, 'removeOldIssues', id_conf)
 #id_sqlScript(sqlDirectory, 'insertNewIssues', id_conf)
 #id_sqlScript(sqlDirectory, 'fixIssues', id_conf)
