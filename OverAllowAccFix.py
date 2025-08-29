@@ -3,7 +3,7 @@ import datetime
 from functions.intelliDealerFunctions import id_sqlScript, retrieve_id_data, read_id_config
 from functions.warehouseFunctions import retrieve_server_data, read_dw_config
 from functions.graphFunctions import send_email_graph, read_graph_config
-from functions.evaluationFunctions import build_dfUsers_from_df, compile_change_list_for_user, compile_change_list_for_Salesmen, append_Salesmen_to_dfAlertUsers
+from functions.evaluationFunctions import build_dfUsers_from_df, compile_error_list
 from functions.renderingFunctions import load_htmlTable_settings, sort_for_email, render_html_table
 from functions.maintenanceFunctions import remove_old_files
 
@@ -103,8 +103,9 @@ def main():
         if not email or not name or not role or not branch:
             logging.warning(f'Skipping user with missing fields: email={email}, name={name}, role={role}, branch={branch}')
             continue
-
-        print(email, name, role, branch)
+        
+        df_user = compile_error_list(WANTED_COLUMNS, dfErrorLog, email)
+        print(df_user)
 
 
 if __name__ == '__main__':
