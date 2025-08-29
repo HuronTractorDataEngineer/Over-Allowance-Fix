@@ -42,7 +42,7 @@ logging.info(' - Microsoft Graph Config loaded')
 logging.info('Loading HTML Table Preferences...')
 
 # Load HTML Table Settings
-WANTED_COLUMNS, STATUS_COLORS, STATUS_ORDER, EMAIL_CC = load_htmlTable_settings()
+WANTED_COLUMNS, STATUS_COLORS, STATUS_ORDER, CC1, CC2 = load_htmlTable_settings()
 
 # Precompute rank mapping for fast sort (higher rank = earlier in table)
 # reversed() + start=1 → items at the start of STATUS_ORDER get the highest rank
@@ -128,7 +128,7 @@ def main():
         
         # Sending email to user
         try:
-            send_email_graph('jkourtesis@hurontractor.com','mbrown@hurontractor.com', subject, body_html, graph_conf)
+            send_email_graph(email, CC1, CC2, subject, body_html, graph_conf)
             sent += 1
         except Exception as e:
             logging.exception(f'Failed for {email}: {e}')

@@ -54,9 +54,11 @@ def load_htmlTable_settings(settings_path: str | Path | None = None):
     status_colors  = {_norm_status(k): v for k, v in cfg.get("status_colors", {}).items()}
 
     report_cfg    = cfg.get("email") or {}
-    report_cc    = report_cfg.get("cc", "")
+    cc1    = report_cfg.get("cc1", "")
+    cc2    = report_cfg.get("cc2", "")
 
-    return wanted_columns, status_colors, status_order, report_cc
+
+    return wanted_columns, status_colors, status_order, cc1, cc2
 
 
 # ------------------------------------------------------------

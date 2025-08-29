@@ -24,6 +24,7 @@
     "Pending":     "#F5ECB1"
   },
   "email": {
-    "cc": "bsheeler@hurontractor.com"
+    "cc1": "bsheeler@hurontractor.com",
+    "cc2": "jkourtesis@hurontractor.com"
   }
 }

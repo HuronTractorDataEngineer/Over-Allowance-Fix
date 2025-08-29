@@ -43,5 +43,5 @@ where
     a.VDTYP in ('T') and a.VDARA <> '' and a.VDARA||a.VDARC <> OA_ACC||substring(b.VDSALC,2,2)
     and (
         VHSTA in ('R','P')
-        or VHSTA = 'I' and VHDTI >= INTEGER(TO_CHAR(CURRENT DATE - 30 DAYS, 'YYYYMMDD'))
+        or VHSTA = 'I' and VHDTI >= INTEGER(TO_CHAR(CURRENT DATE - 3 DAYS, 'YYYYMMDD'))
     )
