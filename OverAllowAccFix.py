@@ -1,7 +1,6 @@
 import logging
 import datetime
 from functions.intelliDealerFunctions import id_sqlScript, retrieve_id_data, read_id_config
-from functions.warehouseFunctions import retrieve_server_data, read_dw_config
 from functions.graphFunctions import send_email_graph, read_graph_config
 from functions.evaluationFunctions import build_dfUsers_from_df, compile_error_list
 from functions.renderingFunctions import load_htmlTable_settings, sort_for_email, render_html_table
@@ -135,7 +134,11 @@ def main():
             logging.exception(f'Failed for {email}: {e}')
             continue
 
-        #print(body_html)
+    # Removing old Log files
+    logging.info(f'Removing old logs.')
+    remove_old_files('logs', 10)
+
+    logging.info(f'User Processing complete. Users processed: {processed}; Emails sent: {sent}.')  
 
 
 if __name__ == '__main__':
