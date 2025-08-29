@@ -53,7 +53,7 @@ def _graph_token(tenant_id: str, client_id: str, client_secret: str) -> str:
         raise RuntimeError('Failed to obtain Graph access token.')
     return token
 
-def send_email_graph(to_addr: str, subject: str, html_body: str, graph_conf: Dict[str, str]) -> None:
+def send_email_graph(to_addr: str, cc_addr: str, subject: str, html_body: str, graph_conf: Dict[str, str]) -> None:
     """
     Send an HTML email via Microsoft Graph using app credentials.
     Builds a POST to `v1.0/users/{sender_upn}/sendMail` with `saveToSentItems=True`.
@@ -76,6 +76,9 @@ def send_email_graph(to_addr: str, subject: str, html_body: str, graph_conf: Dic
             "subject": subject,
             "body": {"contentType": "HTML", "content": html_body},
             "toRecipients": [{"emailAddress": {"address": to_addr}}],
+            "ccRecipients": [
+                {"emailAddress": {"address": cc_addr}}
+            ],
         },
         "saveToSentItems": True,
     }

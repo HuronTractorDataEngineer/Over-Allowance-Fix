@@ -94,7 +94,7 @@ def sort_for_email(_STATUS_RANK, df: pd.DataFrame) -> pd.DataFrame:
     work = work.sort_values(by=['_rank','INVOICE'], ascending=[False, False], kind='mergesort')
     return work.drop(columns=['_rank'])
 
-def render_html_table(_STATUS_RANK, STATUS_COLORS, url, label, df: pd.DataFrame, title: str, subtitle: str = '') -> str:
+def render_html_table(_STATUS_RANK, STATUS_COLORS, df: pd.DataFrame, title: str, subtitle: str = '') -> str:
     """
     Render a status-colored HTML table suitable for email.
 
