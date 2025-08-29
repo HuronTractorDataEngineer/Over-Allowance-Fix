@@ -106,7 +106,7 @@ def main():
             logging.warning(f'Skipping user with missing fields: email={email}, name={name}, role={role}, branch={branch}')
             continue
         
-        # Compile Chance List choosing correct method based on if Role is Salesperson
+        # Compile Change List choosing correct method based on if Role is Salesperson
         if role == "Salesperson":
             df_user = compile_change_list_for_Salesmen(WANTED_COLUMNS, dfChangeLog, email)
         else:

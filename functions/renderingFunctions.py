@@ -90,13 +90,10 @@ def sort_for_email(_STATUS_RANK, df: pd.DataFrame) -> pd.DataFrame:
         return df
     work = df.copy()
     work['_rank'] = work['STATUS'].map(lambda s: _STATUS_RANK.get(_normalize_status(s), 0))
-    if 'EVENT_TS' in work.columns:
-        work['_ts'] = pd.to_datetime(work['EVENT_TS'], errors='coerce')
-    else:
-        work['_ts'] = pd.NaT
+
     # Sort: STATUS rank desc, then EVENT_TS desc, then STOCK_NUMBER asc for stability
-    work = work.sort_values(by=['_rank','_ts','STOCK_NUMBER'], ascending=[False, False, True], kind='mergesort')
-    return work.drop(columns=['_rank','_ts'])
+    work = work.sort_values(by=['_rank','INVOICE'], ascending=[False, False], kind='mergesort')
+    return work.drop(columns=['_rank'])
 
 def render_html_table(_STATUS_RANK, STATUS_COLORS, url, label, df: pd.DataFrame, title: str, subtitle: str = '') -> str:
     """

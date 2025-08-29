@@ -104,8 +104,19 @@ def main():
             logging.warning(f'Skipping user with missing fields: email={email}, name={name}, role={role}, branch={branch}')
             continue
         
+        # Compile Error List for user
         df_user = compile_error_list(WANTED_COLUMNS, dfErrorLog, email)
-        print(df_user)
+        processed += 1
+
+        # Confirming List contains data, if not record in log and skip to next user
+        if df_user.empty:
+            logging.info(f'No matching changes for {email} ({role} @ {branch}).')
+            continue
+
+        # Sort by STATUS priority then Invoice and render colored table
+        df_send = sort_for_email(_STATUS_RANK, df_user.copy())
+
+        print(df_send)
 
 
 if __name__ == '__main__':
