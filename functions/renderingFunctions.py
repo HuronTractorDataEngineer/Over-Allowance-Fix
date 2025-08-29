@@ -49,16 +49,12 @@ def load_htmlTable_settings(settings_path: str | Path | None = None):
     with open(settings_path, "r", encoding="utf-8") as f:
         cfg = json.load(f)
 
+    cc = cfg.get("cc", [])
     wanted_columns = cfg.get("wanted_columns", [])
     status_order   = [_norm_status(s) for s in cfg.get("status_order", [])]
     status_colors  = {_norm_status(k): v for k, v in cfg.get("status_colors", {}).items()}
 
-    report_cfg    = cfg.get("email") or {}
-    cc1    = report_cfg.get("cc1", "")
-    cc2    = report_cfg.get("cc2", "")
-
-
-    return wanted_columns, status_colors, status_order, cc1, cc2
+    return wanted_columns, status_colors, status_order, cc
 
 
 # ------------------------------------------------------------

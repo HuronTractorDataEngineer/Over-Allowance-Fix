@@ -42,7 +42,7 @@ logging.info(' - Microsoft Graph Config loaded')
 logging.info('Loading HTML Table Preferences...')
 
 # Load HTML Table Settings
-WANTED_COLUMNS, STATUS_COLORS, STATUS_ORDER, CC1, CC2 = load_htmlTable_settings()
+WANTED_COLUMNS, STATUS_COLORS, STATUS_ORDER, CC = load_htmlTable_settings()
 
 # Precompute rank mapping for fast sort (higher rank = earlier in table)
 # reversed() + start=1 → items at the start of STATUS_ORDER get the highest rank
@@ -74,7 +74,7 @@ logging.info(' - ErrorLog dataset loaded')
 dfAlertUsers = build_dfUsers_from_df(dfErrorLog)
 logging.info(' - Alert Users Loaded')
 
-
+dfInvoiced = dfErrorLog.loc[dfErrorLog['STATUS'].eq('Invoiced'), WANTED_COLUMNS].copy()
 # ------------------------------------------------------------
 # Main Orchestrator
 # ------------------------------------------------------------
@@ -115,24 +115,30 @@ def main():
         # Sort by STATUS priority then Invoice and render colored table
         df_send = sort_for_email(_STATUS_RANK, df_user.copy())
 
-        recordCount = len(df_send)
-        fixedCount = len(df_send['STATUS'] != 'Invoiced')
+        fixedCount = df_send['STATUS'] != 'Invoiced'
 
         # Setting Email variables
-        subject = f"Overallowance Account Errors found for {name} ({recordCount} records)"
+        subject = f"Overallowance Account Errors found for {name} ({len(df_send)} records)"
         title   = f"Pending and Released fixed / Invoiced requires journal"
-        subtitle= f"Total Pending and Released records fixed: {fixedCount} (sorted by STATUS)"
+        subtitle= f"Total Pending and Released records fixed: {len(fixedCount)} (sorted by STATUS)"
 
         # Rendering HTML email
         body_html = render_html_table(_STATUS_RANK, STATUS_COLORS, df_send, title=title, subtitle=subtitle)
         
         # Sending email to user
         try:
-            send_email_graph(email, CC1, CC2, subject, body_html, graph_conf)
+            send_email_graph('jkourtesis@hurontractor.com', subject, body_html, graph_conf, CC)
             sent += 1
         except Exception as e:
             logging.exception(f'Failed for {email}: {e}')
             continue
+    
+    if not dfInvoiced.empty:
+
+        body_htmlInvoiced = render_html_table(_STATUS_RANK, STATUS_COLORS, dfInvoiced, title=title, subtitle=subtitle)
+        
+        send_email_graph('lsmith@hurontractor.com', subject, body_htmlInvoiced, graph_conf)
+
 
     # Removing old Log files
     logging.info(f'Removing old logs.')

@@ -1,6 +1,6 @@
 import os
 import logging
-from typing import Dict
+from typing import Dict, List, Optional
 import json
 import urllib.request
 import urllib.parse
@@ -53,10 +53,10 @@ def _graph_token(tenant_id: str, client_id: str, client_secret: str) -> str:
         raise RuntimeError('Failed to obtain Graph access token.')
     return token
 
-def send_email_graph(to_addr: str, cc1: str, cc2: str, subject: str, html_body: str, graph_conf: Dict[str, str]) -> None:
+def send_email_graph(to_addr: str, subject: str, html_body: str, graph_conf: Dict[str, str], cc: Optional[List[str]] = None) -> None:
     """
     Send an HTML email via Microsoft Graph using app credentials.
-    Builds a POST to `v1.0/users/{sender_upn}/sendMail` with `saveToSentItems=True`.
+    Optionally CC additional recipients via `cc`.
     """
 
     sender = graph_conf.get('sender_upn')
@@ -71,18 +71,19 @@ def send_email_graph(to_addr: str, cc1: str, cc2: str, subject: str, html_body: 
     token = _graph_token(tenant, client_id, client_secret)
 
     url = f'https://graph.microsoft.com/v1.0/users/{urllib.parse.quote(sender)}/sendMail'
-    body = {
-        "message": {
-            "subject": subject,
-            "body": {"contentType": "HTML", "content": html_body},
-            "toRecipients": [{"emailAddress": {"address": to_addr}}],
-            "ccRecipients": [
-                {"emailAddress": {"address": cc1}},
-                {"emailAddress": {"address": cc2}}
-            ],
-        },
-        "saveToSentItems": True,
+    message = {
+        "subject": subject,
+        "body": {"contentType": "HTML", "content": html_body},
+        "toRecipients": [{"emailAddress": {"address": to_addr}}],
     }
+
+    # Only add ccRecipients if any non-empty addresses were provided
+    cc_clean = [a.strip() for a in (cc or []) if a and a.strip()]
+    if cc_clean:
+        message["ccRecipients"] = [{"emailAddress": {"address": a}} for a in cc_clean]
+
+    body = {"message": message, "saveToSentItems": True}
+
     data = json.dumps(body).encode('utf-8')
     req = urllib.request.Request(url, data=data, method='POST')
     req.add_header('Authorization', f'Bearer {token}')
@@ -90,7 +91,6 @@ def send_email_graph(to_addr: str, cc1: str, cc2: str, subject: str, html_body: 
 
     try:
         with urllib.request.urlopen(req, timeout=30) as resp:
-            # Expect 202 Accepted, with no content
             if resp.status not in (200, 202):
                 raise RuntimeError(f'Unexpected Graph status code: {resp.status}')
         logging.info(f'Graph email sent to {to_addr} (subject: {subject}).')

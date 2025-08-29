@@ -23,8 +23,8 @@
     "Released":   "#F5D3B1",
     "Pending":     "#F5ECB1"
   },
-  "email": {
-    "cc1": "bsheeler@hurontractor.com",
-    "cc2": "jkourtesis@hurontractor.com"
-  }
+  "cc": [
+    "mbrown@hurontractor.com",
+    "jkourtesis@hurontractor.com"
+  ]
 }
