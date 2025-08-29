@@ -70,8 +70,42 @@ logging.info(' - Fixed pending and released issues')
 # ------------------------------------------------------------
 logging.info('Retrieving dataframes...')
 dfErrorLog = retrieve_id_data(sqlDirectory, 'errorLog', id_conf)
+logging.info(' - ErrorLog dataset loaded')
 
-print(dfErrorLog)
+dfAlertUsers = build_dfUsers_from_df(dfErrorLog)
+logging.info(' - Alert Users Loaded')
 
-dfUsers = build_dfUsers_from_df(dfErrorLog)
-print(dfUsers)
+
+# ------------------------------------------------------------
+# Main Orchestrator
+# ------------------------------------------------------------
+def main():
+    """
+    Compile per-user change lists, and email results via Graph.
+    """
+
+    # Initialize Counts
+    logging.info('Initializing Counts')
+    processed = 0
+    sent = 0
+
+    # Loop through compiling table and sending email for each user.
+    logging.info('Starting Alert User Processing Loop')
+    for _, user in dfAlertUsers.iterrows():
+
+        # Assign Current User attributes
+        email = str(user.get('Email') or '').strip()
+        name = str(user.get('Name') or '').strip()
+        role  = str(user.get('Role')  or '').strip()
+        branch= str(user.get('Branch')or '').strip()
+
+        # Checking for missing values
+        if not email or not name or not role or not branch:
+            logging.warning(f'Skipping user with missing fields: email={email}, name={name}, role={role}, branch={branch}')
+            continue
+
+        print(email, name, role, branch)
+
+
+if __name__ == '__main__':
+    main()
