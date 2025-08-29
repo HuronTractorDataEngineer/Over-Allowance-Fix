@@ -122,12 +122,12 @@ def main():
         df_send = sort_for_email(_STATUS_RANK, df_user.copy())
 
         # Creating list of corrected records
-        correctedRecords = df_send['STATUS'] != 'Invoiced'
+        corrected_count = int(df_send["STATUS"].isin(["Pending", "Released"]).sum())
 
         # Setting Email variables
-        subject = f"Overallowance Account Errors found for {name} ({len(df_send)} records)"
+        subject  = f"Overallowance Account Errors for {name} ({len(df_send)} records; {corrected_count} auto-fixed)"
         title   = f"Pending and Released fixed / Invoiced requires journal"
-        subtitle= f"Total Pending and Released records fixed: {len(correctedRecords)} (sorted by STATUS)"
+        subtitle = f"Auto-fixed (Pending+Released): {corrected_count} • Total: {len(df_send)}"
 
         # Rendering HTML email
         body_html = render_html_table(_STATUS_RANK, STATUS_COLORS, df_send, title=title, subtitle=subtitle)
@@ -142,9 +142,11 @@ def main():
     
     # Check for Invoiced Issues, if found send to Leanne for Intervention
     if not dfInvoiced.empty:
-        logging.info(f'Found Invoiced issues')
-        body_htmlInvoiced = render_html_table(_STATUS_RANK, STATUS_COLORS, dfInvoiced, title=title, subtitle=subtitle)
-        send_email_graph('lsmith@hurontractor.com', subject, body_htmlInvoiced, graph_conf)
+        inv_subject  = f"Overallowance: {len(dfInvoiced)} invoiced issues requiring journal"
+        inv_title    = "Invoiced requires journal"
+        inv_subtitle = f"Total Invoiced records: {len(dfInvoiced)}"
+        body_htmlInvoiced = render_html_table(_STATUS_RANK, STATUS_COLORS, dfInvoiced,title=inv_title, subtitle=inv_subtitle)
+        send_email_graph("lsmith@hurontractor.com", inv_subject, body_htmlInvoiced, graph_conf)
         logging.info(f' - Sent Invoiced Issues to Leanne for intervention')
 
     # Removing old Log files
