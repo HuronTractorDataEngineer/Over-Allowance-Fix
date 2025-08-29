@@ -38,6 +38,7 @@ def load_htmlTable_settings(settings_path: str | Path | None = None):
         wanted_columns: List of column names to include (in order).
         status_colors: Mapping of normalized status -> color (e.g., hex).
         status_order: List of normalized statuses in priority order.
+        cc: List of CC email addresses for emails
 
     Notes:
         Status keys and order are normalized via `_norm_status` for

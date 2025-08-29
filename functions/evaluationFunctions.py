@@ -1,21 +1,11 @@
-import logging
-from typing import Optional, Set
 import pandas as pd
 
 # ------------------------------------------------------------
-# Helper functions — Salesperson and Purchaser Evaluation
+# Helper functions — Build user list
 # ------------------------------------------------------------
 def build_dfUsers_from_df(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Append unique Salesperson entries from df_log to dfAlertUsers, skipping emails already present.
-
-    - Reads (if available) SALESPERSON_EMAIL/SALESPERSON and PURCHASER_EMAIL/PURCHASER.
-    - Normalizes emails (trim + casefold, must contain '@'); prefers the longer non-empty name per email.
-    - Filters out emails already in dfAlertUsers['Email'] (case-insensitive).
-    - Appends new rows with Role='Salesperson' and Branch='All'.
-
-    Returns:
-        pd.DataFrame: dfAlertUsers with new Salesperson rows appended (inputs not modified in place).
+    Builds and email df from df
     """
     email_col = _find_col(df, 'EMAIL')
     name_col  = _find_col(df, 'NAME')
@@ -44,7 +34,7 @@ def build_dfUsers_from_df(df: pd.DataFrame) -> pd.DataFrame:
         if not prev or (n and len(n) > len(prev)):
             mapping[e] = n
 
-    # Collect from Salesperson columns
+    # Collect from Email column
     if email_col:
         names = df[name_col] if name_col else None
         for em, nm in zip(df[email_col], (names if names is not None else [None] * len(df))):
@@ -55,7 +45,7 @@ def build_dfUsers_from_df(df: pd.DataFrame) -> pd.DataFrame:
     dfEmails = pd.DataFrame(rows, columns=['Email', 'Name'])
 
 
-    # Add Role and Branch columns to Salesperson
+    # Add Role and Branch columns to df
     dfEmails = dfEmails.assign(Role='Settlement Auditor', Branch='All')
 
     return dfEmails

@@ -47,6 +47,7 @@ WANTED_COLUMNS, STATUS_COLORS, STATUS_ORDER, CC = load_htmlTable_settings()
 # Precompute rank mapping for fast sort (higher rank = earlier in table)
 # reversed() + start=1 → items at the start of STATUS_ORDER get the highest rank
 _STATUS_RANK = {s.lower(): rank for rank, s in enumerate(reversed(STATUS_ORDER), start=1)}
+
 logging.info(' - Table Preferences loaded')
 
 
@@ -64,10 +65,12 @@ logging.info(' - Logged New issues')
 id_sqlScript(sqlDirectory, 'fixIssues', id_conf)
 logging.info(' - Fixed pending and released issues')
 
+
 # ------------------------------------------------------------
 # Load and compile working datasets
 # ------------------------------------------------------------
 logging.info('Retrieving dataframes...')
+
 dfErrorLog = retrieve_id_data(sqlDirectory, 'errorLog', id_conf)
 logging.info(' - ErrorLog dataset loaded')
 
@@ -75,12 +78,15 @@ dfAlertUsers = build_dfUsers_from_df(dfErrorLog)
 logging.info(' - Alert Users Loaded')
 
 dfInvoiced = dfErrorLog.loc[dfErrorLog['STATUS'].eq('Invoiced'), WANTED_COLUMNS].copy()
+logging.info(' - Invoiced Loaded')
+
+
 # ------------------------------------------------------------
 # Main Orchestrator
 # ------------------------------------------------------------
 def main():
     """
-    Compile per-user change lists, and email results via Graph.
+    Compile Settlement Auditor Error lists, and email results via Graph.
     """
 
     # Initialize Counts
@@ -89,7 +95,7 @@ def main():
     sent = 0
 
     # Loop through compiling table and sending email for each user.
-    logging.info('Starting Alert User Processing Loop')
+    logging.info('Starting Settlement Auditor Processing Loop')
     for _, user in dfAlertUsers.iterrows():
 
         # Assign Current User attributes
@@ -115,36 +121,37 @@ def main():
         # Sort by STATUS priority then Invoice and render colored table
         df_send = sort_for_email(_STATUS_RANK, df_user.copy())
 
-        fixedCount = df_send['STATUS'] != 'Invoiced'
+        # Creating list of corrected records
+        correctedRecords = df_send['STATUS'] != 'Invoiced'
 
         # Setting Email variables
         subject = f"Overallowance Account Errors found for {name} ({len(df_send)} records)"
         title   = f"Pending and Released fixed / Invoiced requires journal"
-        subtitle= f"Total Pending and Released records fixed: {len(fixedCount)} (sorted by STATUS)"
+        subtitle= f"Total Pending and Released records fixed: {len(correctedRecords)} (sorted by STATUS)"
 
         # Rendering HTML email
         body_html = render_html_table(_STATUS_RANK, STATUS_COLORS, df_send, title=title, subtitle=subtitle)
         
         # Sending email to user
         try:
-            send_email_graph('jkourtesis@hurontractor.com', subject, body_html, graph_conf, CC)
+            send_email_graph(email, subject, body_html, graph_conf, CC)
             sent += 1
         except Exception as e:
             logging.exception(f'Failed for {email}: {e}')
             continue
     
+    # Check for Invoiced Issues, if found send to Leanne for Intervention
     if not dfInvoiced.empty:
-
+        logging.info(f'Found Invoiced issues')
         body_htmlInvoiced = render_html_table(_STATUS_RANK, STATUS_COLORS, dfInvoiced, title=title, subtitle=subtitle)
-        
         send_email_graph('lsmith@hurontractor.com', subject, body_htmlInvoiced, graph_conf)
-
+        logging.info(f' - Sent Invoiced Issues to Leanne for intervention')
 
     # Removing old Log files
     logging.info(f'Removing old logs.')
     remove_old_files('logs', 10)
 
-    logging.info(f'User Processing complete. Users processed: {processed}; Emails sent: {sent}.')  
+    logging.info(f'Error Processing complete. Users processed: {processed}; Emails sent: {sent}.')  
 
 
 if __name__ == '__main__':
