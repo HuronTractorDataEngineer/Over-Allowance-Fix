@@ -79,8 +79,7 @@ def sort_for_email(_STATUS_RANK, df: pd.DataFrame) -> pd.DataFrame:
 
     Order is:
     1) status priority (descending) via `_STATUS_RANK` on normalized STATUS,
-    2) EVENT_TS (descending, parsed with `to_datetime(errors='coerce')`),
-    3) STOCK_NUMBER (ascending) for tie-break.
+    2) Invoice (descending) for tie-break.
 
     Returns:
         A new DataFrame sorted as above; if STATUS is missing, returns `df` unchanged.
