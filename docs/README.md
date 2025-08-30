@@ -184,7 +184,6 @@ The Python entrypoint (`main.py`) orchestrates:
 
 ## Development Notes
 
-- Keep import side effects minimal; do work inside functions (e.g., `main()`), not at import time.
 - Use absolute or project‑root‑relative paths when running under Task Scheduler.
 - Consider a simple single‑instance lock if you expect long runs near the 16:30 trigger.
 
