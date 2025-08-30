@@ -5,7 +5,9 @@ import pandas as pd
 import os
 from typing import Dict, Optional
 
-
+# ------------------------------------------------------------
+# IntelliDealer Config Reader
+# ------------------------------------------------------------
 def read_id_config():
     """
     Retrieve IntelliDealer connection settings from environment variables only.
@@ -26,8 +28,9 @@ def read_id_config():
     logging.info("IntelliDealer Connection settings retrieved")
     return env_conf
 
+
 # ------------------------------------------------------------
-# Data Retreival functions — Populate Dataframes
+# Data Retreival function — Populate Dataframes
 # ------------------------------------------------------------
 
 def retrieve_id_data(sqlDirectory: str, sqlFileName: str, id_conf: Dict[str, str], logMinutesStart: Optional[str] = None, logMinutesEnd: Optional[str] = None, logInterval: Optional[str] = None) -> pd.DataFrame:
@@ -72,19 +75,16 @@ def retrieve_id_data(sqlDirectory: str, sqlFileName: str, id_conf: Dict[str, str
             connection.close()
         logging.info(' - Cursor and Connection Closed')
 
+
+# ------------------------------------------------------------
+# Data minipulation function - Script runner
+# ------------------------------------------------------------
+def _split_sql_on_semicolons(sql: str) -> list[str]:
+    # strip a possible BOM and split on ';'
+    return [s.strip() for s in sql.replace('\ufeff', '').split(';') if s.strip()]
+
 def id_sqlScript(sqlDirectory: str, sqlFileName: str, id_conf: Dict[str, str]):
     """
-    Execute a statement from an SQL file on a specified iSeries Access IBM DB2 database.
-
-    This function establishes a connection to a specified database using provided credentials,
-    reads an SQL script from a given file, executes the script, and commits the changes.
-    It handles exceptions related to database connections and SQL execution, and ensures that the
-    database connection is properly closed after execution.
-
-    Notes:
-    - The function logs various stages of execution and errors using the logging module.
-    - Ensure that the 'iSeries Access ODBC Driver' is installed and correctly configured on the system.
-    - The SQL script file should be encoded in 'utf-8-sig'.
     """
     logging.info(f'Executing: execute_update_statement function')
 
@@ -107,28 +107,34 @@ def id_sqlScript(sqlDirectory: str, sqlFileName: str, id_conf: Dict[str, str]):
         logging.info(f' - Reading {sqlFileName} SQL Script')
         sql_file_path = f'{sqlDirectory}/{sqlFileName}.sql'
         with codecs.open(sql_file_path, 'r', encoding='utf-8-sig') as file:
-            sql_update_statement = file.read()
+            script = file.read()
+
+        statements = _split_sql_on_semicolons(script)
+        logging.info(f' - Found {len(statements)} statement(s)')
 
         # Execute SQL update statement
         logging.info(f' - Executing {sqlFileName} SQL Statement')
         cursor = connection.cursor()
-        cursor.execute(sql_update_statement)
-        connection.commit()  # Commit the transaction
-        logging.info(f' - {sqlFileName} Executed and Committed')
+
+        # Looping through Statements
+        for i, stmt in enumerate(statements, 1):
+            try:
+                logging.info(f'   -> Executing [{i}/{len(statements)}]')
+                cursor.execute(stmt)
+            except Exception as e:
+                logging.error(f'   !! Failed on statement {i}: {stmt[:200]}...')
+                raise
+
+        logging.info(f' - {sqlFileName} executed (CMT=0: statements are permanent)')
 
     except pyodbc.ProgrammingError as e:
         logging.error(f' - Programming Error occurred: {e}')
-        if connection:
-            connection.rollback()  # Rollback in case of error
     except pyodbc.Error as e:
         logging.error(f' - Database error occurred: {e}')
-        if connection:
-            connection.rollback()
     except Exception as e:
         logging.error(f' - An unexpected error occurred: {e}')
-        if connection:
-            connection.rollback()
     finally:
         if connection:
+            cursor.close
             connection.close()
-            logging.info(' - Connection Closed')
+            logging.info(' - Cursor and Connection Closed')
