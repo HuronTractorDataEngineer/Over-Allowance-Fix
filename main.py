@@ -23,59 +23,6 @@ logging.info(f'{jobName} Job and Logging Config loaded')
 
 
 # ------------------------------------------------------------
-# Load Connection Settings
-# ------------------------------------------------------------
-logging.info('Loading Connection Settings...')
-
-# IntelliDealer connection
-id_conf = read_id_config()
-logging.info(' - IntelliDealer Config loaded')
-
-# Graph settings (required for this version)
-graph_conf = read_graph_config()
-logging.info(' - Microsoft Graph Config loaded')
-
-
-# ------------------------------------------------------------
-# Load HTML Table Preferences
-# ------------------------------------------------------------
-logging.info('Loading HTML Table Preferences...')
-
-# Load HTML Table Settings
-WANTED_COLUMNS, STATUS_COLORS, STATUS_ORDER, CC = load_htmlTable_settings()
-
-# Precompute rank mapping for fast sort (higher rank = earlier in table)
-# reversed() + start=1 → items at the start of STATUS_ORDER get the highest rank
-_STATUS_RANK = {s.lower(): rank for rank, s in enumerate(reversed(STATUS_ORDER), start=1)}
-
-logging.info(' - Table Preferences loaded')
-
-
-# ------------------------------------------------------------
-# Find, log and fix Overallowance Account issues
-# ------------------------------------------------------------
-logging.info('Processing Fixes...')
-
-id_sqlScript(sqlDirectory, 'fixScript', id_conf)
-logging.info(' - Found, logged and fixed over allowance account issue for pending and released invoices')
-
-
-# ------------------------------------------------------------
-# Load and compile working datasets
-# ------------------------------------------------------------
-logging.info('Retrieving dataframes...')
-
-dfErrorLog = retrieve_id_data(sqlDirectory, 'errorLog', id_conf)
-logging.info(' - ErrorLog dataset loaded')
-
-dfAlertUsers = build_dfUsers_from_df(dfErrorLog)
-logging.info(' - Alert Users Loaded')
-
-dfInvoiced = dfErrorLog.loc[dfErrorLog['STATUS'].eq('Invoiced'), WANTED_COLUMNS].copy()
-logging.info(' - Invoiced Loaded')
-
-
-# ------------------------------------------------------------
 # Main Orchestrator
 # ------------------------------------------------------------
 def main():
@@ -83,6 +30,62 @@ def main():
     Compile Settlement Auditor Error lists, and email results via Graph.
     """
 
+    # ------------------------------------------------------------
+    # Load Connection Settings
+    # ------------------------------------------------------------
+    logging.info('Loading Connection Settings...')
+
+    # IntelliDealer connection
+    id_conf = read_id_config()
+    logging.info(' - IntelliDealer Config loaded')
+
+    # Graph settings (required for this version)
+    graph_conf = read_graph_config()
+    logging.info(' - Microsoft Graph Config loaded')
+
+
+    # ------------------------------------------------------------
+    # Load HTML Table Preferences
+    # ------------------------------------------------------------
+    logging.info('Loading HTML Table Preferences...')
+
+    # Load HTML Table Settings
+    WANTED_COLUMNS, STATUS_COLORS, STATUS_ORDER, CC = load_htmlTable_settings()
+
+    # Precompute rank mapping for fast sort (higher rank = earlier in table)
+    # reversed() + start=1 → items at the start of STATUS_ORDER get the highest rank
+    _STATUS_RANK = {s.lower(): rank for rank, s in enumerate(reversed(STATUS_ORDER), start=1)}
+
+    logging.info(' - Table Preferences loaded')
+
+
+    # ------------------------------------------------------------
+    # Find, log and fix Overallowance Account issues
+    # ------------------------------------------------------------
+    logging.info('Processing Fixes...')
+
+    id_sqlScript(sqlDirectory, 'fixScript', id_conf)
+    logging.info(' - Found, logged and fixed over allowance account issue for pending and released invoices')
+
+
+    # ------------------------------------------------------------
+    # Load and compile working datasets
+    # ------------------------------------------------------------
+    logging.info('Retrieving dataframes...')
+
+    dfErrorLog = retrieve_id_data(sqlDirectory, 'errorLog', id_conf)
+    logging.info(' - ErrorLog dataset loaded')
+
+    dfAlertUsers = build_dfUsers_from_df(dfErrorLog)
+    logging.info(' - Alert Users Loaded')
+
+    dfInvoiced = dfErrorLog.loc[dfErrorLog['STATUS'].eq('Invoiced'), WANTED_COLUMNS].copy()
+    logging.info(' - Invoiced Loaded')
+
+
+    # ------------------------------------------------------------
+    # Process user email notifications
+    # ------------------------------------------------------------
     # Initialize Counts
     logging.info('Initializing Counts')
     processed = 0
@@ -143,6 +146,9 @@ def main():
         send_email_graph("lsmith@hurontractor.com", inv_subject, body_htmlInvoiced, graph_conf)
         logging.info(f' - Sent Invoiced Issues to Leanne for intervention')
 
+    # ------------------------------------------------------------
+    # Log clean up
+    # ------------------------------------------------------------
     # Removing old Log files
     logging.info(f'Removing old logs.')
     remove_old_files('logs', 10)
