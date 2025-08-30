@@ -27,7 +27,24 @@ logging.info(f'{jobName} Job and Logging Config loaded')
 # ------------------------------------------------------------
 def main():
     """
-    Compile Settlement Auditor Error lists, and email results via Graph.
+    Orchestrate the Over Allowance Fix job.
+
+    Workflow:
+        1) Load IntelliDealer (DB2) and Microsoft Graph configs.
+        2) Load HTML table preferences and compute a status-priority map.
+        3) Execute `sql/fixScript.sql` to rebuild the working table and update
+           Pending/Released items in IntelliDealer (Invoiced excluded).
+        4) Retrieve the ErrorLog dataset and derive:
+           - per-user error lists (for settlement users)
+           - the Invoiced subset (last 30 days) for reviewer oversight.
+        5) For each user with data: sort by status priority, render an HTML table,
+           and email via Graph (with configured CC).
+        6) If Invoiced issues exist, email a summary to the designated reviewer.
+        7) Rotate logs, keeping the newest 10 files.
+
+    Notes:
+        Designed for unattended runs via Windows Task Scheduler
+        (Mon–Fri at TO BE DETERMINED).
     """
 
     # ------------------------------------------------------------
