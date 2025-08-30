@@ -1,5 +1,7 @@
+-- Truncate table DMOVRACCF
 truncate table DMOVRACCF;
 
+-- Insert into table DMOVRACCF
 insert into DMOVRACCF
 With
 
@@ -45,9 +47,10 @@ where
     a.VDTYP in ('T') and a.VDARA <> '' and a.VDARA||a.VDARC <> OA_ACC||substring(b.VDSALC,2,2)
     and (
         VHSTA in ('R','P')
-        or VHSTA = 'I' and VHDTI >= INTEGER(TO_CHAR(CURRENT DATE - 3 DAYS, 'YYYYMMDD'))
+        or VHSTA = 'I' and VHDTI >= INTEGER(TO_CHAR(CURRENT DATE - 30 DAYS, 'YYYYMMDD'))
     );
 
+-- update CGIIND
 update CGIIND as a
 set
    VDARA = 

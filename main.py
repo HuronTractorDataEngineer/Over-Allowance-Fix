@@ -56,14 +56,8 @@ logging.info(' - Table Preferences loaded')
 # ------------------------------------------------------------
 logging.info('Processing Fixes...')
 
-id_sqlScript(sqlDirectory, 'removeOldIssues', id_conf)
-logging.info(' - Removed old issues')
-
-id_sqlScript(sqlDirectory, 'insertNewIssues', id_conf)
-logging.info(' - Logged New issues')
-
-id_sqlScript(sqlDirectory, 'fixIssues', id_conf)
-logging.info(' - Fixed pending and released issues')
+id_sqlScript(sqlDirectory, 'fixScript', id_conf)
+logging.info(' - Found, logged and fixed over allowance account issue for pending and released invoices')
 
 
 # ------------------------------------------------------------

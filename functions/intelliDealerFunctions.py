@@ -83,6 +83,15 @@ def _split_sql_on_semicolons(sql: str) -> list[str]:
     # strip a possible BOM and split on ';'
     return [s.strip() for s in sql.replace('\ufeff', '').split(';') if s.strip()]
 
+def first_comment_line(stmt: str) -> str:
+    s = stmt.lstrip().replace('\r\n', '\n').replace('\r', '\n')
+    line = s.split('\n', 1)[0]              # first line only
+    if line.startswith('--'):
+        return line[2:].strip()             # drop '--'
+    if line.startswith('/*'):
+        return line[2:].split('*/', 1)[0].lstrip('*').strip()  # first part of a block comment
+    return line.strip()                      # fallback (in case a comment isn't present)
+
 def id_sqlScript(sqlDirectory: str, sqlFileName: str, id_conf: Dict[str, str]):
     """
     """
@@ -119,8 +128,12 @@ def id_sqlScript(sqlDirectory: str, sqlFileName: str, id_conf: Dict[str, str]):
         # Looping through Statements
         for i, stmt in enumerate(statements, 1):
             try:
-                logging.info(f'   -> Executing [{i}/{len(statements)}]')
+                title = first_comment_line(stmt) or " ".join(stmt.split())[:120]
+                logging.info(f'   -> Executing [{i}/{len(statements)}]: {title}')
+                #logging.info(f'           -> Statment: {stmt}')
                 cursor.execute(stmt)
+                rows = cursor.rowcount
+                logging.info(f'           -> {rows} effected by statement')
             except Exception as e:
                 logging.error(f'   !! Failed on statement {i}: {stmt[:200]}...')
                 raise
