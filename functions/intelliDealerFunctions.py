@@ -118,19 +118,20 @@ def id_sqlScript(sqlDirectory: str, sqlFileName: str, id_conf: Dict[str, str]):
         with codecs.open(sql_file_path, 'r', encoding='utf-8-sig') as file:
             script = file.read()
 
+        # Create statement list
         statements = _split_sql_on_semicolons(script)
         logging.info(f' - Found {len(statements)} statement(s)')
 
-        # Execute SQL update statement
-        logging.info(f' - Executing {sqlFileName} SQL Statement')
+        # Initialize cursor
+        logging.info(f' - Initializing cursor')
         cursor = connection.cursor()
 
         # Looping through Statements
         for i, stmt in enumerate(statements, 1):
             try:
+                # Pull comment as title, log statement being run, run statement, log effected row count
                 title = first_comment_line(stmt) or " ".join(stmt.split())[:120]
                 logging.info(f'   -> Executing [{i}/{len(statements)}]: {title}')
-                #logging.info(f'           -> Statment: {stmt}')
                 cursor.execute(stmt)
                 rows = cursor.rowcount
                 logging.info(f'           -> {rows} effected by statement')
