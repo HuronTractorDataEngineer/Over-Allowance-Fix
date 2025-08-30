@@ -94,6 +94,13 @@ def first_comment_line(stmt: str) -> str:
 
 def id_sqlScript(sqlDirectory: str, sqlFileName: str, id_conf: Dict[str, str]):
     """
+    Execute an IBM i (iSeries) SQL script via ODBC, statement by statement.
+
+    Opens `{sqlDirectory}/{sqlFileName}.sql` (UTF-8-SIG), splits on semicolons,
+    and runs each statement using the iSeries Access ODBC driver. Logs the
+    connection steps, a title for each statement (from its first comment, if any),
+    and the rows affected. Uses `cmt=0` (autocommit), so each statement is
+    committed immediately.
     """
     logging.info(f'Executing: execute_update_statement function')
 
@@ -148,7 +155,8 @@ def id_sqlScript(sqlDirectory: str, sqlFileName: str, id_conf: Dict[str, str]):
     except Exception as e:
         logging.error(f' - An unexpected error occurred: {e}')
     finally:
+        if cursor is not None:
+            cursor.close()
         if connection:
-            cursor.close
             connection.close()
-            logging.info(' - Cursor and Connection Closed')
+        logging.info(' - Cursor and Connection Closed')

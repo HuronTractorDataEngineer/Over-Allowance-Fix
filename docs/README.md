@@ -1,187 +1,195 @@
 # Over Allowance Fix
 
-Automates detection and correction of **Overallowance** account mismatches in IntelliDealer.  
-The job snapshots current issues into a staging table, auto‑fixes eligible records (Pending/Released), and emails clean HTML summaries (with status coloring) to the right settlement/audit contacts via Microsoft Graph.
+Automated job that audits and corrects **Over Allowance** account coding in IntelliDealer, then emails status tables to the appropriate users.  
+Runs unattended on **Windows Server 2019** on TO BE DETERMINED
 
 ---
 
-## Why this exists
+## Overview
 
-In IntelliDealer, Overallowance (OA) can be posted to the wrong GL account depending on unit type and sale account. This tool:
-
-- Finds trades where **current OA account** ≠ the **expected** OA account
-- **Auto‑corrects** non‑invoiced (Pending/Released) lines directly in `CGIIND`
-- **Surfaces Invoiced** exceptions for journal intervention
-- Emails **per-person** error lists plus a **global invoiced** summary
-
----
-
-## How it works (pipeline)
-
-1. **Snapshot** — `sql/removeOldIssues.sql` truncates `DMOVRACCF` (staging).  
-2. **Rebuild** — `sql/insertNewIssues.sql` repopulates `DMOVRACCF` with *current* issues.
-3. **Auto‑fix** — `sql/fixIssues.sql` writes corrected OA accounts back to `CGIIND` for **Pending/Released**.
-4. **Recipients** — `sql/errorLog.sql` maps Branch/Salesperson to **Settlement Auditor Name and Email**.
-5. **Render & send** — Python builds small per‑recipient DataFrames, renders colored HTML tables, and **emails** through Microsoft Graph.
-6. **Housekeeping** — logs rotate in `logs/`.
+1. Refreshed a working table in DB2 on IBM i (iSeries) with the latest over‑allowance candidates.
+2. Compute the correct over‑allowance account based on mapping rules and transaction state.
+3. **Update** IntelliDealer for *Pending* and *Released* records (invoiced records are excluded from updates).
+4. Compile personalized tables for each settlement auditor and email them via **Microsoft Graph** (application permissions).
+5. Send a separate summary to the designated reviewer for **Invoiced (last 3 days)** items that require journal action.
+6. Rotate log files to keep the newest 10 logs.
 
 ---
 
-## Repository layout
+## Repository Layout
 
 ```
 OVER ALLOWANCE FIX/
 ├─ config/
-│  └─ htmlSettings.json          # Columns, status colors, status order, default CCs
+│  └─ htmlSettings.json        # Columns, status order/colors, CC list
+│  └─ rebuildIssuesTable.sql   # Script to make changes to workin table is needed (Run in ACS)
+├─ docs/
+│  └─ (optional) README.md     # Project docs (this file can live at root)
 ├─ functions/
-│  ├─ evaluationFunctions.py     # Build recipient list & per-person error slices
-│  ├─ graphFunctions.py          # Microsoft Graph email (client credentials)
-│  ├─ intelliDealerFunctions.py  # ODBC connection + SQL execution helpers
-│  ├─ maintenanceFunctions.py    # Log cleanup & misc utilities
-│  └─ renderingFunctions.py      # HTML table + status coloring/sort
-├─ logs/                         # Timestamped job logs (rotated)
+│  ├─ evaluationFunctions.py   # Build user list, per-user filters
+│  ├─ graphFunctions.py        # Send email via Microsoft Graph
+│  ├─ intelliDealerFunctions.py# DB access, SQL execution helpers
+│  ├─ maintenanceFunctions.py  # Keep newest N log files
+│  └─ renderingFunctions.py    # HTML table settings & rendering
+├─ logs/                       # Log file directory; timestamped log files
 ├─ sql/
-│  ├─ errorLog.sql               # Join DMOVRACCF to per-recipient Name/Email
-│  ├─ fixIssues.sql              # Update CGIIND for Pending/Released
-│  ├─ insertNewIssues.sql        # Populate DMOVRACCF with current issues
-│  ├─ rebuildIssuesTable.sql     # (optional) helper if structure needs rebuild
-│  └─ removeOldIssues.sql        # Truncate DMOVRACCF (fresh snapshot each run)
+│  ├─ fixScript.sql            # Refresh DMOVRACCF data update CGIIND (non‑invoiced)
+│  └─ errorLog.sql             # Pull run reporting data (Join DMOVRACCF to settlement recipients)
 ├─ .gitignore
-└─ main.py
+└─ main.py                     # Orchestrates the end‑to‑end run
 ```
 
-> Tip: include an empty `functions/__init__.py` if packaging/imports require it in your environment.
+> **Note:** The app resolves files by folder name (e.g., `sql/`, `config/`). When running under **Task Scheduler**, set the task’s **Start in** directory to the project root—or use absolute paths.
 
 ---
 
 ## Prerequisites
 
-- **Python 3.10+**
-- **Packages**
-  ```bash
-  pip install pandas pyodbc requests
-  ```
-- **IBM i ODBC driver** (Access Client Solutions). Ensure the ODBC driver is installed (64‑bit if using 64‑bit Python) and accessible to `pyodbc`.
-- **Microsoft Graph** Azure AD app (client‑credentials flow) with **Application** permission:
-  - `Mail.Send` (Application)
-  - Admin consent granted
-  - A mailbox UPN you can send as (`GRAPH_SENDER_UPN`)
-
-> ⚠️ This job updates production data (`CGIIND`). Test in non‑prod first.
+- **Python 3.x** on Windows Server 2019
+- **IBM i Access ODBC Driver** (“iSeries Access ODBC Driver”) installed
+- Network access/credentials to the IntelliDealer DB2 database
+- A Microsoft Entra app with **Graph** permissions to send mail as the service account (application permissions)
+- Outbound HTTPS allowed to Graph API endpoints
 
 ---
 
 ## Configuration
 
-All runtime configuration is provided via environment variables and a small JSON file for HTML formatting.
+### 1) Environment Variables
 
-### IntelliDealer (ODBC)
+Set these for the **run account** (the same account used by Task Scheduler). System‑level env vars are recommended.
 
-Set these variables in your runtime environment (scheduler, service, or shell):
-
-- `ID_SERVER` — Host/IP of the IBM i / DB2 system  
-- `ID_DATABASE` — Database/library (e.g., company library)  
-- `ID_USER` — Service account  
+**IntelliDealer / DB2**
+- `ID_SERVER` — IBM i host
+- `ID_DATABASE` — Default library / DBQ
+- `ID_USER` — User profile
 - `ID_PASSWORD` — Password
 
-### Microsoft Graph (email)
+**Microsoft Graph (application creds)**
+- `GRAPH_TENANT_ID`
+- `GRAPH_CLIENT_ID`
+- `GRAPH_CLIENT_SECRET`
+- `GRAPH_SENDER_UPN` — UPN of the mailbox to send from
 
-- `GRAPH_TENANT_ID` — Azure AD tenant ID  
-- `GRAPH_CLIENT_ID` — App registration client ID  
-- `GRAPH_CLIENT_SECRET` — Client secret  
-- `GRAPH_SENDER_UPN` — Mailbox UPN to send “from” (e.g., `noreply@hurontractor.com`)
+### 2) HTML/Email Settings (`config/htmlSettings.json`)
 
-### HTML / rendering
+Controls the email table:
+- `wanted_columns` — column subset & order
+- `status_order` — render/sort order (first = highest priority)
+- `status_colors` — background color per status
+- `cc` — additional recipients for all emails
 
-`config/htmlSettings.json` controls:
-
-```jsonc
-{
-  "wanted_columns": ["STATUS","INVOICE","TRADE_KEY","BRANCH","SALESPERSON","CURRENT_OVER_ACC","CORRECT_OVER_ACC","COMMENTS"],
-  "status_order":   ["Invoiced","Released","Pending"],
-  "status_colors":  {
-    "Invoiced": "#ffe8e8",
-    "Released": "#fff6d6",
-    "Pending":  "#e9f6ff"
-  },
-  "cc": ["settlements@hurontractor.com"]
-}
-```
+A sample is already included.
 
 ---
 
-## Running locally
+## Installation
 
-From the repository root:
+```bat
+:: From an elevated PowerShell or CMD
+cd C:\path	o\OverAllowanceFix
 
-```bash
+:: (Optional) Create and activate a virtual environment
+python -m venv .venv
+call .venv\Scriptsctivate.bat
+
+:: Install dependencies
+pip install -r requirements.txt
+```
+
+> Ensure the IBM i Access ODBC Driver is installed on the server before running.
+
+---
+
+## Running Locally
+
+```bat
+cd C:\path	o\OverAllowanceFix
+call .venv\Scriptsctivate.bat
 python main.py
 ```
 
-What happens per run:
-
-1. Load settings & connect to DB.
-2. `TRUNCATE DMOVRACCF` → rebuild current issues (`insertNewIssues.sql`).
-3. Apply **auto‑fix** for Pending/Released (`fixIssues.sql`).
-4. Build per‑recipient tables and **email** HTML summaries.
-5. Optionally send a **global “Invoiced”** summary to settlement/audit.
-6. Write a log to `logs/OverAllowAccFix_YYYY-MM-DD_HH-MM-SS.log` and prune older logs.
-
-### Scheduling
-
-**Windows Task Scheduler** (example):
-- Program/script: `python`
-- Arguments: `C:\path\to\repo\main.py`
-- Start in: `C:\path\to\repo`
-
-**cron** (example):
-```
-0 6 * * 1-6 /usr/bin/python3 /opt/overallowance/main.py >> /opt/overallowance/cron.log 2>&1
-```
+Logs are written to `.\logs\OverAllowAccFix_YYYY-MM-DD_HH-MM-SS.log`
 
 ---
 
-## Notes on the data flow
+## Windows Task Scheduler
 
-- The truncate‑and‑rebuild approach guarantees a clean snapshot and avoids duplicates in `DMOVRACCF`.
-- **Invoiced** rows are **not** auto‑fixed. They are emailed for journal action.
-- Email tables are sorted by **status priority** (from `status_order`) and then by **Invoice**.
+Create a scheduled task that runs **Mon–Fri** at **TO BE DETERMINED**.
+
+**Action (recommended `.cmd` wrapper):**
+
+```bat
+@echo off
+setlocal
+cd /d C:\path	o\OverAllowanceFix
+
+:: If you prefer not to use system env vars, you can set them here:
+:: set ID_SERVER=your-host
+:: set ID_DATABASE=YOURLIB
+:: set ID_USER=userid
+:: set ID_PASSWORD=********
+:: set GRAPH_TENANT_ID=...
+:: set GRAPH_CLIENT_ID=...
+:: set GRAPH_CLIENT_SECRET=...
+:: set GRAPH_SENDER_UPN=service@yourdomain.com
+
+call .venv\Scriptsctivate.bat
+python main.py
+```
+
+**Settings:**
+- Run whether user is logged on or not
+- Use the same account that owns the environment variables
+- Start in: `C:\path	o\OverAllowanceFix`
+- If the task is still running, **Do not start a new instance** (prevents overlap)
+- (Optional) Stop the task if it runs longer than 30 minutes
+
+---
+
+## How It Works (Data & SQL)
+
+- `sql/fixScript.sql`
+  - Truncates and repopulates `DMOVRACCF` from live data and mapping rules.
+  - Derives **Correct_Over_Acc** and **Status** and marks items requiring action.
+  - **Updates** `CGIIND` only for **Pending/Released**, never for *Invoiced*.
+  - Includes **Invoiced (last 3 days)** for review emails.
+- `sql/errorLog.sql`
+  - Joins `DMOVRACCF` to a small mapping of settlement recipients to attach **Name** and **Email**.
+
+The Python entrypoint (`main.py`) orchestrates:
+1. Build/refresh data via ODBC.
+2. Compile per‑user slices and render HTML tables.
+3. Send emails using Microsoft Graph.
+4. Rotate logs (keep newest 10).
+
+---
+
+## Logging & Maintenance
+
+- Log files are timestamped per run in `.\logs\`.
+- `remove_old_files(directory, keep_count)` keeps only the newest **10** logs (configurable in `main.py`).
 
 ---
 
 ## Troubleshooting
 
-- **ODBC connection/driver errors**
-  - Verify IBM i ODBC driver installation and bitness (Python & driver must match).
-  - Recheck `ID_*` variables and network access to the host.
-- **Graph 401/403/insufficient privileges**
-  - Confirm `GRAPH_*` values, `Mail.Send` (Application) permission, and admin consent.
-  - Ensure the sender UPN is allowed for application‑send.
-- **No emails / empty tables**
-  - Validate the `insertNewIssues.sql` logic for current conditions.
-  - Ensure `errorLog.sql` maps to real recipients (Name/Email).
-- **Wrong columns/order or colors**
-  - Update `config/htmlSettings.json` → `wanted_columns`, `status_order`, `status_colors`.
+- **ODBC Driver not found**: Verify IBM i Access ODBC Driver is installed and the driver name is exactly `"iSeries Access ODBC Driver"`.
+- **Connection errors**: Confirm `ID_*` env vars and network access to the IBM i host.
+- **Graph errors**: Ensure the four `GRAPH_*` env vars are set and the app has permission to send as the service account. Check service principal assignment and consent.
+- **No emails received**: Validate `GRAPH_SENDER_UPN`, recipient addresses, and spam/quarantine rules.
+- **Empty tables**: Confirm the SQL scripts in `sql/` are present and that the run account has privileges to read/write the referenced libraries/tables.
 
 ---
 
-## Development tips
+## Development Notes
 
-- Consider a `--noop` (dry‑run) flag to skip DB updates and email sends while writing HTML files locally.
-- Add small unit tests for:
-  - Recipient extraction & per‑user slicing
-  - Sort order for email tables
-  - Status counting in headers
+- Keep import side effects minimal; do work inside functions (e.g., `main()`), not at import time.
+- Use absolute or project‑root‑relative paths when running under Task Scheduler.
+- Consider a simple single‑instance lock if you expect long runs near the 16:30 trigger.
 
 ---
 
-## Security
+## License
 
-- Secrets are **only** read from environment variables. Never commit credentials or `.env` files.
-- Restrict the Graph app to the minimum scope and monitor mail‑send usage.
-
----
-
-## License / Ownership
-
-Internal Huron Tractor utility. Not for external distribution.
+Internal use at Huron Tractor.
